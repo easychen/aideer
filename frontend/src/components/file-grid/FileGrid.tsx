@@ -57,6 +57,9 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   
   // 全局文件更新
   const { triggerFileUpdate } = useFileUpdate();
+  
+  // hover状态管理
+  const [hoveredFileId, setHoveredFileId] = useState<string | null>(null);
 
   useEffect(() => {
     loadFiles();
@@ -428,6 +431,8 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                     onFileSelect?.(file);
                   }}
                   onContextMenu={(e) => handleContextMenu(e, file)}
+                  onMouseEnter={() => setHoveredFileId(file.id)}
+                  onMouseLeave={() => setHoveredFileId(null)}
                 >
                   <div className={`flex-shrink-0 mx-auto ${
                     previewSizeConfig[previewSize].itemWidth
@@ -440,9 +445,11 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                     />
                   </div>
                   <div className="mt-2 px-1 min-h-[2.5rem] flex flex-col justify-start">
-                    <p className="text-sm font-medium text-center line-clamp-2 leading-tight" title={file.name}>
-                      {file.name}
-                    </p>
+                    <ScrollableText 
+                      text={file.name}
+                      className="text-sm font-medium text-center leading-tight"
+                      isHovered={hoveredFileId === file.id}
+                    />
                     <p className="text-xs text-muted-foreground text-center mt-1">
                       {formatFileSize(file.size)}
                     </p>

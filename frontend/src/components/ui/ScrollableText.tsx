@@ -4,14 +4,17 @@ interface ScrollableTextProps {
   text: string;
   className?: string;
   maxWidth?: string;
+  isHovered?: boolean;
 }
 
 const ScrollableText: React.FC<ScrollableTextProps> = ({ 
   text, 
   className = '', 
-  maxWidth = '100%' 
+  maxWidth = '100%',
+  isHovered: externalIsHovered 
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [internalIsHovered, setInternalIsHovered] = useState(false);
+  const isHovered = externalIsHovered !== undefined ? externalIsHovered : internalIsHovered;
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const textRef = useRef<HTMLDivElement>(null);
@@ -36,18 +39,19 @@ const ScrollableText: React.FC<ScrollableTextProps> = ({
   // 滚动动画
   useEffect(() => {
     if (isHovered && isOverflowing) {
-      const startTime = Date.now();
-      const duration = 2000; // 2秒滚动到末尾
-      const delay = 500; // 0.5秒延迟开始
+      let startTime = Date.now();
+      const scrollDuration = 4000; // 4秒滚动到末尾
+      const pauseAtEndDuration = 1000; // 在末尾停留1秒
+      const pauseAtStartDuration = 1000; // 在头部停留1秒
+      const totalCycleDuration = scrollDuration + pauseAtEndDuration + pauseAtStartDuration;
       
       const animate = () => {
         const elapsed = Date.now() - startTime;
+        const cyclePosition = elapsed % totalCycleDuration;
         
-        if (elapsed < delay) {
-          // 延迟阶段，保持在起始位置
-          setScrollPosition(0);
-        } else {
-          const progress = Math.min((elapsed - delay) / duration, 1);
+        if (cyclePosition < scrollDuration) {
+          // 滚动阶段：从头部滚动到末尾
+          const progress = cyclePosition / scrollDuration;
           
           if (textRef.current && containerRef.current) {
             const maxScroll = textRef.current.scrollWidth - containerRef.current.clientWidth;
@@ -57,9 +61,18 @@ const ScrollableText: React.FC<ScrollableTextProps> = ({
             
             setScrollPosition(maxScroll * easeInOutQuad);
           }
+        } else if (cyclePosition < scrollDuration + pauseAtEndDuration) {
+          // 在末尾停留阶段
+          if (textRef.current && containerRef.current) {
+            const maxScroll = textRef.current.scrollWidth - containerRef.current.clientWidth;
+            setScrollPosition(maxScroll);
+          }
+        } else {
+          // 在头部停留阶段
+          setScrollPosition(0);
         }
         
-        if (elapsed < delay + duration && isHovered) {
+        if (isHovered) {
           animationRef.current = requestAnimationFrame(animate);
         }
       };
@@ -78,11 +91,15 @@ const ScrollableText: React.FC<ScrollableTextProps> = ({
   }, [isHovered, isOverflowing]);
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
+    if (externalIsHovered === undefined) {
+      setInternalIsHovered(true);
+    }
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
+    if (externalIsHovered === undefined) {
+      setInternalIsHovered(false);
+    }
   };
 
   return (
