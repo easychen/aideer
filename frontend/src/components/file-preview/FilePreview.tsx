@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { FileText, Image, Music, Video, File } from 'lucide-react';
+import { FileText, Image, Music, Video, File, Play, Pause } from 'lucide-react';
 import { FileItem } from '../../types/index';
 
 interface FilePreviewProps {
@@ -215,18 +215,53 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
         );
       
       case 'audio':
+        const [isPlaying, setIsPlaying] = useState(false);
+        const audioRef = useRef<HTMLAudioElement>(null);
+        
+        const togglePlay = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          const audio = audioRef.current;
+          if (!audio) return;
+          
+          if (isPlaying) {
+            audio.pause();
+            setIsPlaying(false);
+          } else {
+            audio.play();
+            setIsPlaying(true);
+          }
+        };
+        
+        const handleAudioEnd = () => {
+          setIsPlaying(false);
+        };
+        
         return (
-          <div className="w-full aspect-square bg-gradient-to-b from-black to-slate-400 rounded-lg flex flex-col items-center justify-center p-2 group border border-border">
-            <Music className="w-8 h-8 text-white mb-4" />
+          <div className="relative w-full aspect-square bg-gradient-to-b from-black to-slate-400 rounded-lg flex flex-col items-center justify-center p-1 group border border-border overflow-hidden">
+            <Music className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
             <audio 
-              controls 
-              className="w-full max-w-[150px] h-8"
+              ref={audioRef}
               preload="metadata"
-              onClick={(e) => e.stopPropagation()}
+              onEnded={handleAudioEnd}
+              className="hidden"
             >
               <source src={`${apiBaseUrl}/data/mybook/${file.relativePath}`} />
               您的浏览器不支持音频播放
             </audio>
+            
+            {/* 半透明播放控制浮层 */}
+            <div 
+              className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
+              onClick={togglePlay}
+            >
+              <div className="bg-white/80 rounded-full p-2 sm:p-3 md:p-4 backdrop-blur-sm">
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-black" />
+                ) : (
+                  <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-black ml-0.5" />
+                )}
+              </div>
+            </div>
           </div>
         );
       
