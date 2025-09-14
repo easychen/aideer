@@ -65,7 +65,7 @@ export const useFileStore = create<FileState>()(devtools(
     browseDirectory: async (path: string) => {
       set({ loading: true, error: null });
       try {
-        const result = await apiService.browseDirectory(path);
+        const result = await apiService.getDirectoryContents(0, path); // TODO: 需要传入正确的projectId
         const { viewMode } = get();
         
         // 根据视图模式排序文件
@@ -89,7 +89,7 @@ export const useFileStore = create<FileState>()(devtools(
     getFileContent: async (filePath: string) => {
       set({ loading: true, error: null });
       try {
-        const result = await apiService.getFileContent(filePath);
+        const result = await apiService.getFileContent(parseInt(filePath)); // 假设filePath是文件ID的字符串
         set({ 
           previewContent: result.content,
           loading: false 
@@ -108,6 +108,7 @@ export const useFileStore = create<FileState>()(devtools(
       try {
         const result = await apiService.searchFiles(
           options.query,
+          undefined, // projectId
           options.directory,
           options.extensions
         );
@@ -205,7 +206,7 @@ function sortFiles(files: FileItem[], viewMode: ViewMode): FileItem[] {
         comparison = a.size - b.size;
         break;
       case 'modified':
-        comparison = new Date(a.modifiedAt).getTime() - new Date(b.modifiedAt).getTime();
+        comparison = new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime();
         break;
       case 'type':
         comparison = (a.extension || '').localeCompare(b.extension || '');

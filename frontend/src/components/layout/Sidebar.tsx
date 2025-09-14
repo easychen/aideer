@@ -1,4 +1,3 @@
-import Skeleton from 'react-loading-skeleton';
 import { ChevronDown, Folder, File, ChevronRight, RefreshCw, FilePlus, FolderPlus, Minimize2 } from 'lucide-react';
 import { useState } from 'react';
 

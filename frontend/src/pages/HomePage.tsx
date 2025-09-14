@@ -1,157 +1,181 @@
-import { File, Folder, Image, Video, Music, FileText, MoreVertical, Download, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Folder, Plus, Search, MoreVertical, Calendar, HardDrive } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Project } from '../types/index';
+import { apiService } from '../services/api';
+import CreateProjectDialog from '../components/dialogs/CreateProjectDialog';
 
-interface FileItem {
-  id: string;
-  name: string;
-  type: 'file' | 'folder';
-  size?: string;
-  modified: string;
-  extension?: string;
-}
-
-const FileListItem = ({ item }: { item: FileItem }) => {
-  const getFileIcon = (extension?: string) => {
-    if (item.type === 'folder') return <Folder className="w-8 h-8 text-blue-500" />;
-    
-    switch (extension?.toLowerCase()) {
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'webp':
-        return <Image className="w-8 h-8 text-green-500" />;
-      case 'mp4':
-      case 'avi':
-      case 'mov':
-      case 'mkv':
-        return <Video className="w-8 h-8 text-purple-500" />;
-      case 'mp3':
-      case 'wav':
-      case 'flac':
-        return <Music className="w-8 h-8 text-orange-500" />;
-      case 'txt':
-      case 'md':
-      case 'doc':
-      case 'docx':
-        return <FileText className="w-8 h-8 text-blue-400" />;
-      default:
-        return <File className="w-8 h-8 text-gray-500" />;
-    }
-  };
-
+const ProjectCard = ({ project, onClick }: { project: Project; onClick: () => void }) => {
   return (
-    <div className="flex items-center p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors group">
-      <div className="mr-3">
-        {getFileIcon(item.extension)}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm truncate">{item.name}</div>
-        <div className="text-xs text-muted-foreground flex items-center space-x-2">
-          <span>{item.modified}</span>
-          {item.size && <span>• {item.size}</span>}
+    <div 
+      className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group"
+      onClick={onClick}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Folder className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-medium text-sm">{project.name}</h3>
+            <p className="text-xs text-muted-foreground">{project.path}</p>
+          </div>
         </div>
+        <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <MoreVertical className="w-4 h-4 text-muted-foreground" />
+        </button>
       </div>
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
-        <button 
-          className="p-1 hover:bg-muted rounded transition-colors"
-          title="下载"
-        >
-          <Download className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-1 hover:bg-muted rounded transition-colors"
-          title="更多操作"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-1 hover:bg-destructive/10 text-destructive rounded transition-colors"
-          title="删除"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+      
+      {project.description && (
+        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{project.description}</p>
+      )}
+      
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center space-x-1">
+          <Calendar className="w-3 h-3" />
+          <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <HardDrive className="w-3 h-3" />
+          <span>项目</span>
+        </div>
       </div>
     </div>
   );
 };
 
 const HomePage = () => {
-  const [files] = useState<FileItem[]>([
-    {
-      id: '1',
-      name: 'project-demo.mp4',
-      type: 'file',
-      extension: 'mp4',
-      size: '125.3 MB',
-      modified: '2024-01-15 14:30'
-    },
-    {
-      id: '2',
-      name: 'assets',
-      type: 'folder',
-      modified: '2024-01-15 12:15'
-    },
-    {
-      id: '3',
-      name: 'screenshot.png',
-      type: 'file',
-      extension: 'png',
-      size: '2.1 MB',
-      modified: '2024-01-15 10:45'
-    },
-    {
-      id: '4',
-      name: 'background-music.mp3',
-      type: 'file',
-      extension: 'mp3',
-      size: '8.7 MB',
-      modified: '2024-01-14 16:20'
-    },
-    {
-      id: '5',
-      name: 'README.md',
-      type: 'file',
-      extension: 'md',
-      size: '1.2 KB',
-      modified: '2024-01-14 09:30'
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const projects = await apiService.getProjects();
+      setProjects(projects);
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const handleProjectClick = (project: Project) => {
+    navigate(`/project/${project.id}`);
+  };
+
+  const handleCreateProject = () => {
+    setShowCreateDialog(true);
+  };
+
+  const handleCreateDialogClose = () => {
+    setShowCreateDialog(false);
+    // 重新加载项目列表
+    loadProjects();
+  };
+
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.path.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="h-full flex flex-col">
-      {/* 文件列表头部 */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between">
+      {/* 头部 */}
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold">文件列表</h2>
-            <p className="text-sm text-muted-foreground">{files.length} 个项目</p>
+            <h1 className="text-2xl font-bold">项目管理</h1>
+            <p className="text-sm text-muted-foreground">选择一个项目开始文件管理</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <select className="px-3 py-1 text-sm border border-border rounded bg-background">
-              <option>按名称排序</option>
-              <option>按修改时间排序</option>
-              <option>按大小排序</option>
-            </select>
-          </div>
+          <button 
+            onClick={handleCreateProject}
+            className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>新建项目</span>
+          </button>
+        </div>
+        
+        {/* 搜索框 */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="搜索项目..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
         </div>
       </div>
       
-      {/* 文件列表内容 */}
-      <div className="flex-1 p-4">
-        {files.length > 0 ? (
-          <div className="space-y-2">
-            {files.map((file) => (
-              <FileListItem key={file.id} item={file} />
+      {/* 项目列表 */}
+      <div className="flex-1 p-6">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="p-4 border border-border rounded-lg">
+                <div className="animate-pulse">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-muted rounded-lg"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-muted rounded w-3/4 mb-1"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </div>
+                  </div>
+                  <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProjects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredProjects.map((project) => (
+              <ProjectCard 
+                key={project.id} 
+                project={project} 
+                onClick={() => handleProjectClick(project)}
+              />
             ))}
           </div>
         ) : (
-          <div className="mt-8 text-center text-muted-foreground">
-            <div className="text-sm">当前目录为空</div>
-            <div className="text-xs mt-1">拖拽文件到此处或点击导入按钮添加文件</div>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Folder className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">
+              {searchQuery ? '未找到匹配的项目' : '暂无项目'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {searchQuery ? '尝试调整搜索条件' : '创建您的第一个项目开始管理文件'}
+            </p>
+            {!searchQuery && (
+              <button 
+                onClick={handleCreateProject}
+                className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors mx-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>创建项目</span>
+              </button>
+            )}
           </div>
         )}
       </div>
+      
+      {/* 创建项目对话框 */}
+      <CreateProjectDialog 
+        isOpen={showCreateDialog}
+        onClose={handleCreateDialogClose}
+      />
     </div>
   );
 };

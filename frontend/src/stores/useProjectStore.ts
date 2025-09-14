@@ -12,10 +12,10 @@ interface ProjectState {
   
   // 操作
   fetchProjects: () => Promise<void>;
-  fetchProject: (id: string) => Promise<void>;
+  fetchProject: (id: number) => Promise<void>;
   createProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'fileCount' | 'totalSize'>) => Promise<void>;
-  updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
-  deleteProject: (id: string) => Promise<void>;
+  updateProject: (id: number, updates: Partial<Project>) => Promise<void>;
+  deleteProject: (id: number) => Promise<void>;
   setCurrentProject: (project: Project | null) => void;
   clearError: () => void;
 }
@@ -43,7 +43,7 @@ export const useProjectStore = create<ProjectState>()(devtools(
     },
     
     // 获取单个项目
-    fetchProject: async (id: string) => {
+    fetchProject: async (id: number) => {
       set({ loading: true, error: null });
       try {
         const project = await apiService.getProject(id);
@@ -74,7 +74,7 @@ export const useProjectStore = create<ProjectState>()(devtools(
     },
     
     // 更新项目
-    updateProject: async (id: string, updates: Partial<Project>) => {
+    updateProject: async (id: number, updates: Partial<Project>) => {
       set({ loading: true, error: null });
       try {
         const updatedProject = await apiService.updateProject(id, updates);
@@ -92,7 +92,7 @@ export const useProjectStore = create<ProjectState>()(devtools(
     },
     
     // 删除项目
-    deleteProject: async (id: string) => {
+    deleteProject: async (id: number) => {
       set({ loading: true, error: null });
       try {
         await apiService.deleteProject(id);

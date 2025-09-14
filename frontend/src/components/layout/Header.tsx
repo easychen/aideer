@@ -1,5 +1,5 @@
 import { Plus, FolderPlus, Settings, Search, ChevronRight, Home } from 'lucide-react';
-import Skeleton from 'react-loading-skeleton';
+
 import { useState } from 'react';
 
 const Header = () => {
@@ -29,7 +29,7 @@ const Header = () => {
       <div className="flex-1 max-w-md mx-8">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <div className="h-9 bg-muted rounded pl-10 animate-pulse"></div>
+          <div className="h-9 bg-muted rounded pl-10"></div>
         </div>
       </div>
       

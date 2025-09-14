@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { Project, FileItem, ApiResponse } from '../types/index';
+import { Project, FileItem, DirectoryNode, ApiResponse } from '../types/index';
 
 // API基础配置
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -48,49 +48,80 @@ class ApiService {
     return response.data.data;
   }
 
-  async getProject(id: string): Promise<Project> {
+  async getProject(id: number): Promise<Project> {
     const response = await this.client.get<ApiResponse<Project>>(`/projects/${id}`);
-    return response.data.data;
+    return response.data.data || response.data;
   }
 
-  async createProject(project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'fileCount' | 'totalSize'>): Promise<Project> {
+  async createProject(project: { name: string; path: string; description?: string }): Promise<Project> {
     const response = await this.client.post<ApiResponse<Project>>('/projects', project);
-    return response.data.data;
+    return response.data.data || response.data;
   }
 
-  async updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+  async scanProject(projectId: number): Promise<{ scannedFiles: number }> {
+    const response = await this.client.post<ApiResponse<{ scannedFiles: number }>>(`/projects/${projectId}/scan`);
+    return response.data.data || response.data;
+  }
+
+  async updateProject(id: number, updates: Partial<Project>): Promise<Project> {
     const response = await this.client.put<ApiResponse<Project>>(`/projects/${id}`, updates);
-    return response.data.data;
+    return response.data.data || response.data;
   }
 
-  async deleteProject(id: string): Promise<void> {
+  async deleteProject(id: number): Promise<void> {
     await this.client.delete(`/projects/${id}`);
   }
 
-  // 文件系统相关API
-  async browseDirectory(dirPath: string): Promise<{ path: string; items: FileItem[] }> {
-    const response = await this.client.get<ApiResponse<{ path: string; items: FileItem[] }>>('/files/browse', {
-      params: { dirPath }
+  // 文件相关API
+  async getProjectFiles(projectId: number, options?: {
+    directoryPath?: string;
+    type?: 'file' | 'directory';
+    mimeType?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ files: FileItem[]; total: number; offset: number; limit: number }> {
+    const response = await this.client.get<ApiResponse<{ files: FileItem[]; total: number; offset: number; limit: number }>>('/files', {
+      params: {
+        projectId,
+        ...options
+      }
     });
-    return response.data.data;
+    return response.data.data || response.data;
   }
 
-  async getFileContent(filePath: string): Promise<{ path: string; content: string; size: number; modifiedAt: string }> {
-    const response = await this.client.get<ApiResponse<{ path: string; content: string; size: number; modifiedAt: string }>>('/files/content', {
-      params: { filePath }
-    });
-    return response.data.data;
+  async getFileById(fileId: number): Promise<FileItem> {
+    const response = await this.client.get<ApiResponse<FileItem>>(`/files/${fileId}`);
+    return response.data.data || response.data;
   }
 
-  async searchFiles(query: string, directory?: string, extensions?: string[]): Promise<{ query: string; directory: string; results: FileItem[] }> {
-    const params: any = { query };
-    if (directory) params.directory = directory;
-    if (extensions && extensions.length > 0) params.extensions = extensions.join(',');
-    
+  async getFileContent(fileId: number): Promise<{ file: FileItem; content: string }> {
+    const response = await this.client.get<ApiResponse<{ file: FileItem; content: string }>>(`/files/${fileId}/content`);
+    return response.data.data || response.data;
+  }
+
+  // 目录相关API
+  async getDirectoryTree(projectId: number): Promise<DirectoryNode[]> {
+    const response = await this.client.get<ApiResponse<DirectoryNode[]>>(`/directories/tree/${projectId}`);
+    return response.data.data || response.data;
+  }
+
+  async getDirectoryContents(projectId: number, path?: string): Promise<{ path: string; items: FileItem[] }> {
+    const response = await this.client.get<ApiResponse<{ path: string; items: FileItem[] }>>('/directories', {
+      params: { projectId, path }
+    });
+    return response.data.data || response.data;
+  }
+
+  async searchFiles(query: string, projectId?: number, directory?: string, extensions?: string[]): Promise<{ query: string; directory: string; results: FileItem[] }> {
     const response = await this.client.get<ApiResponse<{ query: string; directory: string; results: FileItem[] }>>('/files/search', {
-      params
+      params: {
+        q: query,
+        projectId,
+        dir: directory,
+        ext: extensions?.join(',')
+      }
     });
-    return response.data.data;
+    return response.data.data || response.data;
   }
 
   // 健康检查

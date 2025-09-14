@@ -1,25 +1,41 @@
 // 项目相关类型
 export interface Project {
-  id: string;
+  id: number;
   name: string;
   path: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-  fileCount: number;
-  totalSize: number;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 文件相关类型
 export interface FileItem {
-  id: string;
+  id: number;
+  projectId: number;
+  name: string;
+  path: string;
+  relativePath: string;
+  size: number;
+  type: 'file' | 'directory';
+  mimeType?: string;
+  extension?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastModified: string;
+  thumbnailPath?: string;
+}
+
+// 目录树节点
+export interface DirectoryNode {
+  id: number;
   name: string;
   path: string;
   type: 'file' | 'directory';
-  size: number;
-  modifiedAt: Date;
-  createdAt: Date;
+  children?: DirectoryNode[];
+  size?: number;
+  mimeType?: string;
   extension?: string;
+  lastModified: string;
 }
 
 // API响应类型
