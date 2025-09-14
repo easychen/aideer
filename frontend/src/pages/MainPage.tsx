@@ -10,12 +10,32 @@ import { useFileUpdate } from '../contexts/FileUpdateContext';
 
 interface OutletContext {
   refreshTrigger: number;
+  isManagementMode: boolean;
+  onToggleManagement: () => void;
+  selectedFiles: string[];
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+  onBatchDelete: () => void;
+  onBatchMove: () => void;
+  onToggleFileSelection: (fileId: string) => void;
+  updateAllFiles: (files: string[]) => void;
 }
 
 const MainPage = () => {
   const { currentProject, loading, fetchProjects } = useProjectStore();
   const { currentPath, setCurrentPath } = usePathContext();
-  const { refreshTrigger } = useOutletContext<OutletContext>();
+  const { 
+    refreshTrigger, 
+    isManagementMode, 
+    onToggleManagement,
+    selectedFiles,
+    onSelectAll,
+    onDeselectAll,
+    onBatchDelete,
+    onBatchMove,
+    onToggleFileSelection,
+    updateAllFiles
+  } = useOutletContext<OutletContext>();
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const { fileUpdateTrigger, onFileUpdate } = useFileUpdate();
@@ -26,6 +46,12 @@ const MainPage = () => {
   }, [fetchProjects]);
 
   const handleFileGridSelect = (file: FileItem) => {
+    if (isManagementMode) {
+      // 管理模式下，切换文件选中状态
+      // 这个逻辑将在Layout组件中处理
+      return;
+    }
+    
     if (file.type === 'directory') {
       // 如果选择的是目录，更新当前路径
       setCurrentPath(file.path);
@@ -95,6 +121,15 @@ const MainPage = () => {
         projectId={currentProject.id}
         currentPath={currentPath}
         onFileSelect={handleFileGridSelect}
+        isManagementMode={isManagementMode}
+        selectedFiles={selectedFiles}
+        onToggleFileSelection={onToggleFileSelection}
+        onToggleManagement={onToggleManagement}
+        onSelectAll={onSelectAll}
+        onDeselectAll={onDeselectAll}
+        onBatchDelete={onBatchDelete}
+        onBatchMove={onBatchMove}
+        updateAllFiles={updateAllFiles}
       />
       
       <FileDetailModal

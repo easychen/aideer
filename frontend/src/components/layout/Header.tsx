@@ -1,4 +1,4 @@
-import { Plus, Settings, ChevronRight, Home, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Settings, ChevronRight, Home, Edit2, Trash2, List, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { usePathContext } from '../../contexts/PathContext';
@@ -10,15 +10,33 @@ import DeleteFolderDialog from '../dialogs/DeleteFolderDialog';
 interface HeaderProps {
   currentPath?: string;
   onImportComplete?: () => void;
+  isManagementMode?: boolean;
+  onToggleManagement?: () => void;
+  selectedFiles?: string[];
+  onSelectAll?: () => void;
+  onDeselectAll?: () => void;
+  onBatchDelete?: () => void;
+  onBatchMove?: () => void;
 }
 
-const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
+const Header = ({ 
+  currentPath = '', 
+  onImportComplete,
+  isManagementMode = false,
+  onToggleManagement,
+  selectedFiles = [],
+  onSelectAll,
+  onDeselectAll,
+  onBatchDelete,
+  onBatchMove
+}: HeaderProps) => {
   const { currentProject } = useProjectStore();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isHoveringBreadcrumb, setIsHoveringBreadcrumb] = useState(false);
   const [isEditFolderDialogOpen, setIsEditFolderDialogOpen] = useState(false);
   const [isDeleteFolderDialogOpen, setIsDeleteFolderDialogOpen] = useState(false);
+  const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
   const { setCurrentPath } = usePathContext();
 
   const handleImportClick = () => {
@@ -143,6 +161,78 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
       
       {/* 右侧：操作按钮 */}
       <div className="flex items-center space-x-2">
+        {/* 管理按钮 */}
+        <button 
+          onClick={onToggleManagement}
+          className={`h-9 px-3 rounded-md transition-colors flex items-center space-x-2 ${
+            isManagementMode 
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+              : 'bg-muted hover:bg-accent text-muted-foreground hover:text-foreground'
+          }`}
+          title="批量管理"
+        >
+          <List className="h-4 w-4" />
+          <span className="text-sm">管理</span>
+        </button>
+        
+        {/* 管理模式下的操作按钮 */}
+        {isManagementMode && (
+          <>
+            <button 
+              onClick={onSelectAll}
+              className="h-9 px-3 bg-muted hover:bg-accent rounded-md transition-colors flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+              title="全选"
+            >
+              <CheckSquare className="h-4 w-4" />
+              <span className="text-sm">全选</span>
+            </button>
+            
+            <button 
+              onClick={onDeselectAll}
+              className="h-9 px-3 bg-muted hover:bg-accent rounded-md transition-colors flex items-center space-x-2 text-muted-foreground hover:text-foreground"
+              title="全不选"
+            >
+              <Square className="h-4 w-4" />
+              <span className="text-sm">全不选</span>
+            </button>
+            
+            {/* 批量操作下拉菜单 */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
+                disabled={selectedFiles.length === 0}
+                className="h-9 px-3 bg-muted hover:bg-accent rounded-md transition-colors flex items-center space-x-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                title="批量操作"
+              >
+                <span className="text-sm">批量操作 ({selectedFiles.length})</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              
+              {isBatchMenuOpen && selectedFiles.length > 0 && (
+                <div className="absolute right-0 top-full mt-1 w-32 bg-background border border-border rounded-md shadow-lg z-50">
+                  <button
+                    onClick={() => {
+                      onBatchDelete?.();
+                      setIsBatchMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors text-destructive hover:text-destructive"
+                  >
+                    批量删除
+                  </button>
+                  <button
+                    onClick={() => {
+                      onBatchMove?.();
+                      setIsBatchMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+                  >
+                    批量移动
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
         <button 
           onClick={handleImportClick}
           disabled={!currentProject}

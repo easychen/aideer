@@ -13,6 +13,7 @@ interface DeleteFolderDialogProps {
 const DeleteFolderDialog = ({ isOpen, onClose, projectId, currentPath, onFolderDeleted }: DeleteFolderDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmText, setConfirmText] = useState('');
 
   // 获取当前目录名称
   const getCurrentFolderName = () => {
@@ -40,8 +41,11 @@ const DeleteFolderDialog = ({ isOpen, onClose, projectId, currentPath, onFolderD
 
   const handleClose = () => {
     setError(null);
+    setConfirmText('');
     onClose();
   };
+
+  const isDeleteEnabled = confirmText.toLowerCase() === 'delete';
 
   if (!isOpen) return null;
 
@@ -83,6 +87,19 @@ const DeleteFolderDialog = ({ isOpen, onClose, projectId, currentPath, onFolderD
                 此操作不可撤销，目录及其所有内容将被永久删除。
               </p>
             </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                请输入 <code className="bg-muted px-1 py-0.5 rounded text-xs">delete</code> 以确认删除：
+              </label>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="输入 delete"
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              />
+            </div>
           </div>
           
           {error && (
@@ -101,7 +118,7 @@ const DeleteFolderDialog = ({ isOpen, onClose, projectId, currentPath, onFolderD
             </button>
             <button
               onClick={handleConfirmDelete}
-              disabled={loading}
+              disabled={loading || !isDeleteEnabled}
               className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? '删除中...' : '确认删除'}

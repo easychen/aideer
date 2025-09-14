@@ -14,6 +14,16 @@ const LayoutContent = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [hasDragged, setHasDragged] = useState(false);
+  
+  // 批量操作状态
+  const [isManagementMode, setIsManagementMode] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [allFiles, setAllFiles] = useState<string[]>([]);
+  
+  // 更新文件列表的函数
+  const updateAllFiles = (files: string[]) => {
+    setAllFiles(files);
+  };
 
   const handleImportComplete = () => {
     // 触发刷新，可以通过增加计数器来通知子组件
@@ -23,6 +33,41 @@ const LayoutContent = () => {
   const handleRefresh = () => {
     // 处理文件树刷新，同时刷新文件列表
     setRefreshTrigger(prev => prev + 1);
+  };
+  
+  // 批量操作相关函数
+  const handleToggleManagement = () => {
+    setIsManagementMode(!isManagementMode);
+    if (isManagementMode) {
+      // 退出管理模式时清空选中状态
+      setSelectedFiles([]);
+    }
+  };
+  
+  const handleToggleFileSelection = (fileId: string) => {
+    setSelectedFiles(prev => 
+      prev.includes(fileId) 
+        ? prev.filter(id => id !== fileId)
+        : [...prev, fileId]
+    );
+  };
+  
+  const handleSelectAll = () => {
+    setSelectedFiles([...allFiles]);
+  };
+  
+  const handleDeselectAll = () => {
+    setSelectedFiles([]);
+  };
+  
+  const handleBatchDelete = () => {
+    // TODO: 实现批量删除逻辑
+    console.log('批量删除文件:', selectedFiles);
+  };
+  
+  const handleBatchMove = () => {
+    // TODO: 实现批量移动逻辑
+    console.log('批量移动文件:', selectedFiles);
   };
 
   const handleSidebarToggle = () => {
@@ -89,12 +134,33 @@ const LayoutContent = () => {
           </button>
           <div className="flex flex-col h-full overflow-hidden">
             {/* 顶部导航 */}
-            <Header currentPath={currentPath} onImportComplete={handleImportComplete} />
+            <Header 
+              currentPath={currentPath} 
+              onImportComplete={handleImportComplete}
+              isManagementMode={isManagementMode}
+              onToggleManagement={handleToggleManagement}
+              selectedFiles={selectedFiles}
+              onSelectAll={handleSelectAll}
+              onDeselectAll={handleDeselectAll}
+              onBatchDelete={handleBatchDelete}
+              onBatchMove={handleBatchMove}
+            />
             
             {/* 页面内容 */}
             <main className="flex-1 overflow-auto">
-              <Outlet context={{ refreshTrigger }} />
-            </main>
+                <Outlet context={{ 
+                  refreshTrigger,
+                  isManagementMode,
+                  onToggleManagement: handleToggleManagement,
+                  selectedFiles,
+                  onSelectAll: handleSelectAll,
+                  onDeselectAll: handleDeselectAll,
+                  onBatchDelete: handleBatchDelete,
+                  onBatchMove: handleBatchMove,
+                  onToggleFileSelection: handleToggleFileSelection,
+                  updateAllFiles
+                }} />
+              </main>
           </div>
         </>
       ) : (
@@ -116,11 +182,32 @@ const LayoutContent = () => {
           <Panel defaultSize={80}>
             <div className="flex flex-col h-full overflow-hidden">
               {/* 顶部导航 */}
-              <Header currentPath={currentPath} onImportComplete={handleImportComplete} />
+              <Header 
+                currentPath={currentPath} 
+                onImportComplete={handleImportComplete}
+                isManagementMode={isManagementMode}
+                onToggleManagement={handleToggleManagement}
+                selectedFiles={selectedFiles}
+                onSelectAll={handleSelectAll}
+                onDeselectAll={handleDeselectAll}
+                onBatchDelete={handleBatchDelete}
+                onBatchMove={handleBatchMove}
+              />
               
               {/* 页面内容 */}
               <main className="flex-1 overflow-auto">
-                <Outlet context={{ refreshTrigger }} />
+                <Outlet context={{ 
+                  refreshTrigger,
+                  isManagementMode,
+                  onToggleManagement: handleToggleManagement,
+                  selectedFiles,
+                  onSelectAll: handleSelectAll,
+                  onDeselectAll: handleDeselectAll,
+                  onBatchDelete: handleBatchDelete,
+                  onBatchMove: handleBatchMove,
+                  onToggleFileSelection: handleToggleFileSelection,
+                  updateAllFiles
+                }} />
               </main>
             </div>
           </Panel>

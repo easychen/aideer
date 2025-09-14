@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Grid3X3, List, Minus, Plus, Search, Image as ImageIcon } from 'lucide-react';
+import { FileText, Grid3X3, List, Minus, Plus, Search, Image as ImageIcon, Check } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 
@@ -14,11 +14,29 @@ interface FileGridProps {
   currentPath?: string;
   onFileSelect?: (file: FileItem) => void;
   selectedFileId?: string;
+  isManagementMode?: boolean;
+  selectedFiles?: string[];
+  onToggleFileSelection?: (fileId: string) => void;
+  onToggleManagement?: () => void;
+  onSelectAll?: () => void;
+  onDeselectAll?: () => void;
+  onBatchDelete?: () => void;
+  onBatchMove?: () => void;
+  updateAllFiles?: (files: string[]) => void;
 }
 
 
 
-const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }: FileGridProps) => {
+const FileGrid = ({ 
+  projectId, 
+  currentPath = '', 
+  onFileSelect, 
+  selectedFileId,
+  isManagementMode = false,
+  selectedFiles = [],
+  onToggleFileSelection,
+  updateAllFiles
+}: FileGridProps) => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +93,10 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
         const response = await apiService.getDirectoryContents(projectId, currentPath);
         const filesOnly = response.items.filter((item: any) => item.type === 'file');
         setFiles(filesOnly);
+        // 更新父组件的文件列表
+        if (updateAllFiles) {
+          updateAllFiles(filesOnly.map((file: FileItem) => file.id));
+        }
       } else {
         // 如果没有指定路径，获取项目根目录的文件
         const response = await apiService.getProjectFiles(projectId, { limit: 1000, offset: 0 });
@@ -85,6 +107,10 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
           return pathParts.length === 1; // 只有一级路径的文件
         });
         setFiles(rootFiles);
+        // 更新父组件的文件列表
+        if (updateAllFiles) {
+          updateAllFiles(rootFiles.map((file: FileItem) => file.id));
+        }
       }
     } catch (error) {
       console.error('Failed to load files:', error);
@@ -423,17 +449,37 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
               {sortedFiles.map((file) => (
                 <div
                   key={file.id}
-                  className={`flex flex-col cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors ${
+                  className={`flex flex-col cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors relative ${
                     selectedFileId === file.id ? 'ring-2 ring-primary' : ''
+                  } ${
+                    isManagementMode && selectedFiles.includes(file.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''
                   } ${previewSizeConfig[previewSize].containerClass}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onFileSelect?.(file);
+                    if (isManagementMode) {
+                      onToggleFileSelection?.(file.id);
+                    } else {
+                      onFileSelect?.(file);
+                    }
                   }}
                   onContextMenu={(e) => handleContextMenu(e, file)}
                   onMouseEnter={() => setHoveredFileId(file.id)}
                   onMouseLeave={() => setHoveredFileId(null)}
                 >
+                  {/* 管理模式下的选中状态指示器 */}
+                  {isManagementMode && (
+                    <div className="absolute top-1 right-1 z-10">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        selectedFiles.includes(file.id) 
+                          ? 'bg-blue-500 border-blue-500 text-white' 
+                          : 'bg-white border-gray-300'
+                      }`}>
+                        {selectedFiles.includes(file.id) && (
+                          <Check className="w-3 h-3" />
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className={`flex-shrink-0 mx-auto ${
                     previewSizeConfig[previewSize].itemWidth
                   } ${
@@ -462,15 +508,35 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
               {sortedFiles.map((file) => (
                 <div
                   key={file.id}
-                  className={`flex items-center space-x-3 p-3 hover:bg-accent/50 cursor-pointer transition-colors ${
+                  className={`flex items-center space-x-3 p-3 hover:bg-accent/50 cursor-pointer transition-colors relative ${
                     selectedFileId === file.id ? 'bg-accent' : ''
+                  } ${
+                    isManagementMode && selectedFiles.includes(file.id) ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onFileSelect?.(file);
+                    if (isManagementMode) {
+                      onToggleFileSelection?.(file.id);
+                    } else {
+                      onFileSelect?.(file);
+                    }
                   }}
                   onContextMenu={(e) => handleContextMenu(e, file)}
                 >
+                  {/* 管理模式下的选中状态指示器 */}
+                  {isManagementMode && (
+                    <div className="flex-shrink-0">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        selectedFiles.includes(file.id) 
+                          ? 'bg-blue-500 border-blue-500 text-white' 
+                          : 'bg-white border-gray-300'
+                      }`}>
+                        {selectedFiles.includes(file.id) && (
+                          <Check className="w-3 h-3" />
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex-shrink-0 w-12 h-12">
                     <FilePreview
                       file={file}
