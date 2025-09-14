@@ -4,6 +4,7 @@ import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
 import FilePreview from '../file-preview/FilePreview';
+import ContextMenu from '../context-menu/ContextMenu';
 import { useViewSettings, previewSizeConfig, PreviewSize } from '../../stores/viewSettings';
 
 interface FileGridProps {
@@ -125,6 +126,13 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   const [renamingFile, setRenamingFile] = useState<FileItem | null>(null);
   const [newFileName, setNewFileName] = useState('');
   
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+    file: FileItem | null;
+  }>({ isOpen: false, position: { x: 0, y: 0 }, file: null });
+  
   // 视图设置
   const { viewMode, previewSize, setViewMode, setPreviewSize } = useViewSettings();
 
@@ -228,12 +236,34 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   };
 
   // 格式化文件大小
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  // 处理右键菜单
+  const handleContextMenu = (e: React.MouseEvent, file: FileItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      isOpen: true,
+      position: { x: e.clientX, y: e.clientY },
+      file
+    });
+  };
+
+  // 关闭右键菜单
+  const handleCloseContextMenu = () => {
+    setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, file: null });
+  };
+
+  // 右键菜单操作处理
+  const handleContextMenuAction = (action: () => void) => {
+    handleCloseContextMenu();
+    action();
   };
 
   const sortedFiles = [...files].sort((a, b) => {
@@ -388,7 +418,11 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                   className={`flex flex-col cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors ${
                     selectedFileId === file.id ? 'ring-2 ring-primary' : ''
                   } ${previewSizeConfig[previewSize].containerClass}`}
-                  onClick={() => onFileSelect?.(file)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFileSelect?.(file);
+                  }}
+                  onContextMenu={(e) => handleContextMenu(e, file)}
                 >
                   <div className={`flex-shrink-0 mx-auto ${
                     previewSizeConfig[previewSize].itemWidth
@@ -398,10 +432,6 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                     <FilePreview
                       file={file}
                       className="w-full h-full"
-                      onRename={handleRename}
-                      onDelete={handleDelete}
-                      onDownload={handleDownload}
-                      onPreview={handlePreview}
                     />
                   </div>
                   <div className="mt-2 px-1 min-h-[2.5rem] flex flex-col justify-start">
@@ -423,16 +453,16 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                   className={`flex items-center space-x-3 p-3 hover:bg-accent/50 cursor-pointer transition-colors ${
                     selectedFileId === file.id ? 'bg-accent' : ''
                   }`}
-                  onClick={() => onFileSelect?.(file)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    // 这里可以添加右键菜单逻辑
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFileSelect?.(file);
                   }}
+                  onContextMenu={(e) => handleContextMenu(e, file)}
                 >
                   <div className="flex-shrink-0 w-12 h-12">
                     <FilePreview
                       file={file}
-                      className="w-full h-full pointer-events-none"
+                      className="w-full h-full"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -457,6 +487,17 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
           </div>
         )}
       </div>
+      
+      {/* 右键菜单 */}
+       <ContextMenu
+         isOpen={contextMenu.isOpen}
+         position={contextMenu.position}
+         onClose={handleCloseContextMenu}
+         onPreview={contextMenu.file ? () => handleContextMenuAction(() => handlePreview(contextMenu.file!)) : undefined}
+         onDownload={contextMenu.file ? () => handleContextMenuAction(() => handleDownload(contextMenu.file!)) : undefined}
+         onRename={contextMenu.file ? () => handleContextMenuAction(() => handleRename(contextMenu.file!)) : undefined}
+         onDelete={contextMenu.file ? () => handleContextMenuAction(() => handleDelete(contextMenu.file!)) : undefined}
+       />
       
       {/* 重命名对话框 */}
       {renameDialogOpen && (

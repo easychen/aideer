@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
 import crypto from 'crypto';
+import mimeTypes from 'mime-types';
 import { DatabaseService } from '../services/database.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { ApiResponse, FileItem, FileQueryParams } from '../types/index.js';
@@ -275,7 +276,7 @@ router.put('/:id/rename', async (req, res) => {
     
     // 获取重命名后的文件信息
     const fileStats = await fs.stat(newPath);
-    const mimeType = require('mime-types').lookup(newPath) || undefined;
+    const mimeType = mimeTypes.lookup(newPath) || undefined;
     const newRelativePath = path.relative(project.path, newPath);
     
     const renamedFile: FileItem = {
@@ -433,7 +434,7 @@ router.post('/upload', upload.array('files'), async (req, res) => {
        
        // 获取文件信息（不保存到数据库）
        const fileStats = await fs.stat(fullPath);
-       const mimeType = require('mime-types').lookup(fullPath) || undefined;
+       const mimeType = mimeTypes.lookup(fullPath) || undefined;
        
        const fileItem: FileItem = {
          id: generateFileId(fullPath),

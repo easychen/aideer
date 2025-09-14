@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Download, Eye, Calendar, HardDrive, FileText, Image, Music, Video, File } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Download, Eye, Calendar, HardDrive, FileText, Image, Music, Video, File, MessageCircle, Edit } from 'lucide-react';
 import { FileItem } from '../../types/index';
 
 interface FileDetailModalProps {
@@ -9,6 +9,9 @@ interface FileDetailModalProps {
 }
 
 const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
+  const [leftWidth, setLeftWidth] = useState(30); // 左侧栏宽度百分比
+  const [rightWidth, setRightWidth] = useState(25); // 右侧栏宽度百分比
+  
   if (!isOpen || !file) return null;
 
   // 从项目路径中提取项目名称
@@ -75,18 +78,18 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
     switch (fileType) {
       case 'image':
         return (
-          <div className="w-full bg-muted rounded-lg overflow-hidden">
+          <div className="w-full h-full bg-muted rounded-lg overflow-hidden flex items-center justify-center">
             <img
               src={`${apiBaseUrl}/data/mybook/${file.relativePath}`}
               alt={file.name}
-              className="w-full object-contain"
+              className="max-w-full max-h-full object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
                 target.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="hidden flex items-center justify-center h-48 bg-muted">
+            <div className="hidden flex items-center justify-center h-full bg-muted">
               <Image className="w-12 h-12 text-muted-foreground" />
               <span className="ml-2 text-muted-foreground">无法加载图片</span>
             </div>
@@ -110,9 +113,9 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
       
       case 'video':
         return (
-          <div className="w-full max-h-96 bg-muted rounded-lg overflow-hidden">
+          <div className="w-full h-full bg-muted rounded-lg overflow-hidden flex items-center justify-center">
             <video 
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-full object-contain"
               controls
               preload="metadata"
             >
@@ -154,11 +157,39 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
     document.body.removeChild(link);
   };
 
+  const handleMouseDown = (e: React.MouseEvent, type: 'left' | 'right') => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = type === 'left' ? leftWidth : rightWidth;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const containerWidth = window.innerWidth * 0.8;
+      const deltaX = e.clientX - startX;
+      const deltaPercent = (deltaX / containerWidth) * 100;
+      
+      if (type === 'left') {
+        const newWidth = Math.max(20, Math.min(50, startWidth + deltaPercent));
+        setLeftWidth(newWidth);
+      } else {
+        const newWidth = Math.max(20, Math.min(50, startWidth - deltaPercent));
+        setRightWidth(newWidth);
+      }
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-card rounded-lg shadow-xl w-[90vw] h-[90vh] overflow-hidden flex flex-col">
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
           <div className="flex items-center space-x-3">
             {getFileIcon()}
             <div>
@@ -187,17 +218,23 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
           </div>
         </div>
 
-        {/* 内容区域 */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {/* 预览区域 */}
-          <div className="mb-6">
-            {renderPreview()}
-          </div>
-
-          {/* 文件信息 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+        {/* 三栏布局 */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* 左侧栏 */}
+          <div className="flex flex-col border-r border-border" style={{ width: `${leftWidth}%` }}>
+            {/* 预览区域 */}
+            <div className="flex-1 p-4 overflow-hidden">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                预览
+              </h3>
+              <div className="h-full">
+                {renderPreview()}
+              </div>
+            </div>
+            
+            {/* 文件信息 */}
+            <div className="border-t border-border p-4 max-h-[40%] overflow-y-auto">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
                 文件信息
               </h3>
               <div className="space-y-2">
@@ -213,14 +250,6 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
                   <span className="text-sm text-muted-foreground">类型:</span>
                   <span className="text-sm font-medium">{file.name.split('.').pop()?.toUpperCase() || '未知'}</span>
                 </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                时间信息
-              </h3>
-              <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">修改时间:</span>
                   <span className="text-sm font-medium">{formatDate(file.lastModified)}</span>
@@ -231,6 +260,56 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
                     {file.relativePath}
                   </span>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* 左侧拖拽条 */}
+          <div 
+            className="w-1 bg-border hover:bg-primary cursor-col-resize transition-colors"
+            onMouseDown={(e) => handleMouseDown(e, 'left')}
+          />
+          
+          {/* 中间栏 */}
+          <div className="flex-1 flex flex-col border-r border-border">
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center space-x-2">
+                <Edit className="w-4 h-4" />
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                  编辑器
+                </h3>
+              </div>
+            </div>
+            <div className="flex-1 p-4 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Edit className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>文件编辑器组件</p>
+                <p className="text-sm mt-1">即将推出</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* 右侧拖拽条 */}
+          <div 
+            className="w-1 bg-border hover:bg-primary cursor-col-resize transition-colors"
+            onMouseDown={(e) => handleMouseDown(e, 'right')}
+          />
+          
+          {/* 右侧栏 */}
+          <div className="flex flex-col" style={{ width: `${rightWidth}%` }}>
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center space-x-2">
+                <MessageCircle className="w-4 h-4" />
+                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                  AI 助手
+                </h3>
+              </div>
+            </div>
+            <div className="flex-1 p-4 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>AI 聊天界面</p>
+                <p className="text-sm mt-1">即将推出</p>
               </div>
             </div>
           </div>

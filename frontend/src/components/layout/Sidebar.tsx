@@ -223,7 +223,12 @@ interface SidebarProps {
 
 const Sidebar = ({ refreshTrigger }: SidebarProps) => {
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
+  
+  const handleRefresh = () => {
+    setInternalRefreshTrigger(prev => prev + 1);
+  };
   
   useEffect(() => {
     fetchProjects();
@@ -271,7 +276,7 @@ const Sidebar = ({ refreshTrigger }: SidebarProps) => {
       {/* 文件树 */}
       <div className="flex-1 p-4 overflow-y-auto">
         {currentProject ? (
-          <FileTree projectId={currentProject.id} refreshTrigger={refreshTrigger} />
+          <FileTree projectId={currentProject.id} refreshTrigger={refreshTrigger || internalRefreshTrigger} />
         ) : (
           <div className="text-center py-8 text-sm text-muted-foreground">
             请选择一个项目
@@ -286,6 +291,7 @@ const Sidebar = ({ refreshTrigger }: SidebarProps) => {
             <button 
               className="p-2 hover:bg-muted/50 rounded-md transition-colors"
               title="刷新文件树"
+              onClick={handleRefresh}
             >
               <RefreshCw className="w-4 h-4 text-muted-foreground" />
             </button>
