@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Download, Eye, MoreVertical, FileText } from 'lucide-react';
+import { Download, Eye, MoreVertical, FileText, Grid3X3, List, Minus, Plus } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
 import FilePreview from '../file-preview/FilePreview';
+import { useViewSettings, previewSizeConfig, PreviewSize } from '../../stores/viewSettings';
 
 interface FileGridProps {
   projectId: number;
@@ -120,6 +121,12 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'modified'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renamingFile, setRenamingFile] = useState<FileItem | null>(null);
+  const [newFileName, setNewFileName] = useState('');
+  
+  // 视图设置
+  const { viewMode, previewSize, setViewMode, setPreviewSize } = useViewSettings();
 
   useEffect(() => {
     loadFiles();
@@ -152,6 +159,81 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRename = (file: FileItem) => {
+    setRenamingFile(file);
+    setNewFileName(file.name);
+    setRenameDialogOpen(true);
+  };
+
+  const handleDelete = async (file: FileItem) => {
+    if (window.confirm(`确定要删除文件 "${file.name}" 吗？此操作不可撤销。`)) {
+      try {
+        await apiService.deleteFile(file.id, projectId);
+        // 重新加载文件列表
+        await loadFiles();
+      } catch (error) {
+        console.error('Failed to delete file:', error);
+        alert('删除文件失败');
+      }
+    }
+  };
+
+  const handleRenameConfirm = async () => {
+    if (!renamingFile || !newFileName.trim()) return;
+    
+    try {
+      await apiService.renameFile(renamingFile.id, projectId, newFileName.trim());
+      // 重新加载文件列表
+      await loadFiles();
+      setRenameDialogOpen(false);
+      setRenamingFile(null);
+      setNewFileName('');
+    } catch (error) {
+      console.error('Failed to rename file:', error);
+      alert('重命名文件失败');
+    }
+  };
+
+  const handleDownload = (file: FileItem) => {
+    const apiBaseUrl = 'http://localhost:3001';
+    const downloadUrl = `${apiBaseUrl}/data/mybook/${file.relativePath}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePreview = (file: FileItem) => {
+    onFileSelect?.(file);
+  };
+
+  // 预览图大小控制
+  const previewSizes: PreviewSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+  const currentSizeIndex = previewSizes.indexOf(previewSize);
+  
+  const increaseSizeSize = () => {
+    if (currentSizeIndex < previewSizes.length - 1) {
+      setPreviewSize(previewSizes[currentSizeIndex + 1]);
+    }
+  };
+  
+  const decreaseSize = () => {
+    if (currentSizeIndex > 0) {
+      setPreviewSize(previewSizes[currentSizeIndex - 1]);
+    }
+  };
+
+  // 格式化文件大小
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const sortedFiles = [...files].sort((a, b) => {
@@ -217,7 +299,62 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
             </h2>
             <p className="text-sm text-muted-foreground">{sortedFiles.length} 个文件</p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
+            {/* 视图模式切换 */}
+            <div className="flex items-center space-x-1 border border-border rounded-md p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1 rounded transition-colors ${
+                  viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="网格视图"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1 rounded transition-colors ${
+                  viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="列表视图"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* 预览图大小控制 */}
+            {viewMode === 'grid' && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={decreaseSize}
+                  disabled={currentSizeIndex === 0}
+                  className="p-1 hover:bg-accent rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="缩小预览图"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <div className="flex space-x-1">
+                  {previewSizes.map((size, index) => (
+                    <div
+                      key={size}
+                      className={`w-2 h-2 rounded-full ${
+                        index === currentSizeIndex ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={increaseSizeSize}
+                  disabled={currentSizeIndex === previewSizes.length - 1}
+                  className="p-1 hover:bg-accent rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="放大预览图"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            
+            {/* 排序选择 */}
             <select 
               value={`${sortBy}-${sortOrder}`}
               onChange={(e) => {
@@ -241,16 +378,73 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
       {/* 文件网格 */}
       <div className="flex-1 p-4 overflow-auto">
         {sortedFiles.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {sortedFiles.map((file) => (
-            <FilePreview
-              key={file.id}
-              file={file}
-              onClick={() => onFileSelect?.(file)}
-              className={selectedFileId === file.id.toString() ? 'ring-2 ring-primary' : ''}
-            />
-          ))}
-        </div>
+          viewMode === 'grid' ? (
+            <div className={`grid gap-4 ${
+              previewSizeConfig[previewSize].cols
+            }`}>
+              {sortedFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className={`flex flex-col cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors ${
+                    selectedFileId === file.id ? 'ring-2 ring-primary' : ''
+                  } ${previewSizeConfig[previewSize].containerClass}`}
+                  onClick={() => onFileSelect?.(file)}
+                >
+                  <div className={`flex-shrink-0 mx-auto ${
+                    previewSizeConfig[previewSize].itemWidth
+                  } ${
+                    previewSizeConfig[previewSize].itemHeight
+                  }`}>
+                    <FilePreview
+                      file={file}
+                      className="w-full h-full"
+                      onRename={handleRename}
+                      onDelete={handleDelete}
+                      onDownload={handleDownload}
+                      onPreview={handlePreview}
+                    />
+                  </div>
+                  <div className="mt-2 px-1 min-h-[2.5rem] flex flex-col justify-start">
+                    <p className="text-sm font-medium text-center line-clamp-2 leading-tight" title={file.name}>
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      {formatFileSize(file.size)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {sortedFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className={`flex items-center space-x-3 p-3 hover:bg-accent/50 cursor-pointer transition-colors ${
+                    selectedFileId === file.id ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => onFileSelect?.(file)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    // 这里可以添加右键菜单逻辑
+                  }}
+                >
+                  <div className="flex-shrink-0 w-12 h-12">
+                    <FilePreview
+                      file={file}
+                      className="w-full h-full pointer-events-none"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatFileSize(file.size)} • {new Date(file.lastModified).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         ) : (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -263,6 +457,52 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
           </div>
         )}
       </div>
+      
+      {/* 重命名对话框 */}
+      {renameDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 w-96 max-w-[90vw]">
+            <h3 className="text-lg font-semibold mb-4">重命名文件</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">新文件名</label>
+              <input
+                type="text"
+                value={newFileName}
+                onChange={(e) => setNewFileName(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="输入新的文件名"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenameConfirm();
+                  } else if (e.key === 'Escape') {
+                    setRenameDialogOpen(false);
+                  }
+                }}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  setRenameDialogOpen(false);
+                  setRenamingFile(null);
+                  setNewFileName('');
+                }}
+                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-accent transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleRenameConfirm}
+                disabled={!newFileName.trim()}
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                确认
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

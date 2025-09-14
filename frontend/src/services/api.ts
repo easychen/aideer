@@ -131,7 +131,7 @@ class ApiService {
   // 文件上传API
   async uploadFile(formData: FormData): Promise<{ success: boolean; data?: any; error?: string; message?: string }> {
     try {
-      const response = await this.client.post<ApiResponse<{ success: boolean; data?: any }>>(
+      const response = await this.client.post<ApiResponse<{ files: any[]; count: number }>>(
         `/files/upload`,
         formData,
         {
@@ -140,15 +140,52 @@ class ApiService {
           },
         }
       );
-      return {
-        success: true,
-        data: response.data.data || response.data
-      };
+      
+      // 检查后端返回的success字段
+      const responseData = response.data;
+      if (responseData.success) {
+        return {
+          success: true,
+          data: responseData.data,
+          message: responseData.message
+        };
+      } else {
+        return {
+          success: false,
+          error: responseData.error || 'Upload failed'
+        };
+      }
     } catch (error: any) {
       return {
         success: false,
         error: error.response?.data?.error || error.message || 'Upload failed'
       };
+    }
+  }
+
+  // 文件重命名API
+  async renameFile(fileId: string, projectId: number, newName: string): Promise<FileItem> {
+    try {
+      const response = await this.client.put<ApiResponse<FileItem>>(`/files/${fileId}/rename`, {
+        projectId,
+        newName
+      });
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error('Rename file error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to rename file');
+    }
+  }
+
+  // 文件删除API
+  async deleteFile(fileId: string, projectId: number): Promise<void> {
+    try {
+      await this.client.delete(`/files/${fileId}`, {
+        params: { projectId }
+      });
+    } catch (error: any) {
+      console.error('Delete file error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to delete file');
     }
   }
 

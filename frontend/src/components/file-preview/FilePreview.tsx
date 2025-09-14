@@ -1,14 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { FileText, Image, Music, Video, File } from 'lucide-react';
 import { FileItem } from '../../types/index';
+import ContextMenu from '../context-menu/ContextMenu';
 
 interface FilePreviewProps {
   file: FileItem;
   className?: string;
   onClick?: () => void;
+  onRename?: (file: FileItem) => void;
+  onDelete?: (file: FileItem) => void;
+  onDownload?: (file: FileItem) => void;
+  onPreview?: (file: FileItem) => void;
 }
 
-const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
+const FilePreview = ({ file, className = '', onClick, onRename, onDelete, onDownload, onPreview }: FilePreviewProps) => {
   // 从项目路径中提取项目名称
   const getProjectName = (projectPath: string): string => {
     return projectPath.split('/').pop() || '';
@@ -20,6 +25,12 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+  }>({ isOpen: false, position: { x: 0, y: 0 } });
 
   // 处理鼠标移动事件
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -47,6 +58,20 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+  };
+  
+  // 处理右键菜单
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({
+      isOpen: true,
+      position: { x: e.clientX, y: e.clientY }
+    });
+  };
+  
+  // 关闭右键菜单
+  const handleCloseContextMenu = () => {
+    setContextMenu({ isOpen: false, position: { x: 0, y: 0 } });
   };
 
   // 计算图片显示位置
@@ -124,64 +149,66 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
       
       case 'audio':
         return (
-          <div className="w-full h-32 bg-muted rounded-lg flex flex-col items-center justify-center p-4">
-            <Music className="w-8 h-8 text-blue-500 mb-2" />
-            <audio 
-              controls 
-              className="w-full max-w-48"
-              preload="none"
-            >
-              <source src={`${apiBaseUrl}/api/files/${file.id}/content`} />
-              您的浏览器不支持音频播放
-            </audio>
+          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2">
+            <Music className="w-6 h-6 text-blue-500 mb-2" />
+            <div className="text-xs text-center text-muted-foreground">
+              音频文件
+            </div>
           </div>
         );
       
       case 'video':
         return (
-          <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
-            <video 
-              className="w-full h-full object-cover"
-              controls
-              preload="metadata"
-            >
-              <source src={`${apiBaseUrl}/api/files/${file.id}/content`} />
-              您的浏览器不支持视频播放
-            </video>
+          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2">
+            <Video className="w-6 h-6 text-purple-500 mb-2" />
+            <div className="text-xs text-center text-muted-foreground">
+              视频文件
+            </div>
           </div>
         );
       
       case 'document':
         return (
-          <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-            <FileText className="w-8 h-8 text-green-500" />
+          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2">
+            <FileText className="w-6 h-6 text-green-500 mb-2" />
+            <div className="text-xs text-center text-muted-foreground">
+              文档文件
+            </div>
           </div>
         );
       
       default:
         return (
-          <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-            <File className="w-8 h-8 text-muted-foreground" />
+          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2">
+            <File className="w-6 h-6 text-muted-foreground mb-2" />
+            <div className="text-xs text-center text-muted-foreground">
+              其他文件
+            </div>
           </div>
         );
     }
   };
 
   return (
-    <div 
-      className={`cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
-      onClick={onClick}
-    >
-      {renderPreview()}
-      <div className="mt-2 px-1">
-        <p className="text-sm font-medium truncate" title={file.name}>
-          {file.name}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {(file.size / 1024).toFixed(1)} KB
-        </p>
+    <>
+      <div 
+        className={`cursor-pointer transition-transform hover:scale-[1.02] ${className}`}
+        onClick={onClick}
+        onContextMenu={handleContextMenu}
+      >
+        {renderPreview()}
       </div>
-    </div>
+      
+      <ContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        onClose={handleCloseContextMenu}
+        onRename={onRename ? () => onRename(file) : undefined}
+        onDelete={onDelete ? () => onDelete(file) : undefined}
+        onDownload={onDownload ? () => onDownload(file) : undefined}
+        onPreview={onPreview ? () => onPreview(file) : undefined}
+      />
+    </>
   );
 };
 

@@ -216,6 +216,158 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// 文件重命名接口
+router.put('/:id/rename', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { projectId, newName } = req.body;
+    
+    if (!projectId || !newName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID and new name are required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件并查找匹配的文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
+    
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found'
+      } as ApiResponse);
+    }
+    
+    if (file.type === 'directory') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot rename directories'
+      } as ApiResponse);
+    }
+    
+    // 构建新的文件路径
+    const oldPath = file.path;
+    const newPath = path.join(path.dirname(oldPath), newName);
+    
+    // 检查新文件名是否已存在
+    if (await fs.pathExists(newPath)) {
+      return res.status(409).json({
+        success: false,
+        error: 'A file with this name already exists'
+      } as ApiResponse);
+    }
+    
+    // 重命名文件
+    await fs.rename(oldPath, newPath);
+    
+    // 获取重命名后的文件信息
+    const fileStats = await fs.stat(newPath);
+    const mimeType = require('mime-types').lookup(newPath) || undefined;
+    const newRelativePath = path.relative(project.path, newPath);
+    
+    const renamedFile: FileItem = {
+      id: generateFileId(newPath),
+      projectId: project.id,
+      name: path.basename(newPath),
+      path: newPath,
+      relativePath: newRelativePath,
+      size: fileStats.size,
+      type: 'file',
+      mimeType: mimeType,
+      extension: path.extname(newPath).slice(1) || undefined,
+      createdAt: fileStats.birthtime.toISOString(),
+      updatedAt: fileStats.mtime.toISOString(),
+      lastModified: fileStats.mtime.toISOString(),
+      thumbnailPath: undefined
+    };
+    
+    return res.json({
+      success: true,
+      data: renamedFile,
+      message: 'File renamed successfully'
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error renaming file:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to rename file'
+    } as ApiResponse);
+  }
+});
+
+// 文件删除接口
+router.delete('/:id', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { projectId } = req.query;
+    
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID is required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId.toString()));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件并查找匹配的文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
+    
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found'
+      } as ApiResponse);
+    }
+    
+    if (file.type === 'directory') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete directories'
+      } as ApiResponse);
+    }
+    
+    // 删除文件
+    await fs.remove(file.path);
+    
+    return res.json({
+      success: true,
+      message: 'File deleted successfully'
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to delete file'
+    } as ApiResponse);
+  }
+});
+
 // 文件上传接口
 router.post('/upload', upload.array('files'), async (req, res) => {
   try {
@@ -255,8 +407,23 @@ router.post('/upload', upload.array('files'), async (req, res) => {
       // 使用前端传递的文件路径信息，如果没有则使用原始文件名
       const fileRelativePath = filePathsArray[i] || file.originalname;
       // 构建目标路径
-      const relativePath = path.join(targetPath, fileRelativePath);
-      const fullPath = path.join(project.path, relativePath);
+      let relativePath = path.join(targetPath, fileRelativePath);
+      let fullPath = path.join(project.path, relativePath);
+       
+       // 检查文件是否已存在，如果存在则自动添加数字后缀
+       let counter = 1;
+       const originalFullPath = fullPath;
+       const originalRelativePath = relativePath;
+       const fileExtension = path.extname(fileRelativePath);
+       const fileNameWithoutExt = path.basename(fileRelativePath, fileExtension);
+       const fileDir = path.dirname(fileRelativePath);
+       
+       while (await fs.pathExists(fullPath)) {
+         const newFileName = `${fileNameWithoutExt}(${counter})${fileExtension}`;
+         relativePath = path.join(targetPath, fileDir, newFileName);
+         fullPath = path.join(project.path, relativePath);
+         counter++;
+       }
        
        // 确保目标目录存在
        await fs.ensureDir(path.dirname(fullPath));
