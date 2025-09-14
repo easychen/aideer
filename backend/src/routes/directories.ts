@@ -1,29 +1,40 @@
 import express from 'express';
 import { DatabaseService } from '../services/database.js';
+import { FileSystemService } from '../services/filesystem.js';
 import { ApiResponse, DirectoryNode, FileItem } from '../types/index.js';
 
 const router: express.Router = express.Router();
 const dbService = DatabaseService.getInstance();
+const fsService = FileSystemService.getInstance();
 
 // 获取项目文件树
 router.get('/tree/:projectId', async (req, res) => {
   try {
     const projectId = parseInt(req.params.projectId);
     
+    // 获取项目信息
+    const project = await dbService.getProjectById(projectId);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
     // 获取项目所有文件和目录
-    const files = await dbService.getFilesByProject(projectId);
+    const files = await fsService.scanDirectory(project.path, projectId);
     
     // 构建文件树
     const tree = buildDirectoryTree(files);
     
-    res.json({
+    return res.json({
       success: true,
       data: tree,
       message: 'Directory tree retrieved successfully'
     } as ApiResponse<DirectoryNode[]>);
   } catch (error) {
     console.error('Error fetching directory tree:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch directory tree'
     } as ApiResponse);
@@ -42,11 +53,20 @@ router.get('/', async (req, res) => {
       } as ApiResponse);
     }
     
-    const files = await dbService.getFilesByProject(parseInt(projectId.toString()));
+    // 获取项目信息
+    const project = await dbService.getProjectById(parseInt(projectId.toString()));
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    const files = await fsService.scanDirectory(project.path, parseInt(projectId.toString()));
     
     // 过滤指定路径下的直接子项
     const targetPath = path ? path.toString() : '';
-    const directChildren = files.filter(file => {
+    const directChildren = files.filter((file: FileItem) => {
       const parentPath = file.relativePath.split('/').slice(0, -1).join('/');
       return parentPath === targetPath;
     });

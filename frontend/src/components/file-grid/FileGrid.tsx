@@ -3,12 +3,13 @@ import { Download, Eye, MoreVertical, FileText } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
+import FilePreview from '../file-preview/FilePreview';
 
 interface FileGridProps {
   projectId: number;
   currentPath?: string;
   onFileSelect?: (file: FileItem) => void;
-  selectedFileId?: number;
+  selectedFileId?: string;
 }
 
 interface FileCardProps {
@@ -128,17 +129,23 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getProjectFiles(projectId, { limit: 1000, offset: 0 });
       
-      // 只显示文件，不显示目录
-      const filesOnly = response.files.filter((item: FileItem) => item.type === 'file');
-      
-      // 如果指定了路径，只显示该路径下的文件
-      const filteredFiles = currentPath 
-        ? filesOnly.filter((file: FileItem) => file.path.startsWith(currentPath))
-        : filesOnly;
-      
-      setFiles(filteredFiles);
+      if (currentPath) {
+        // 如果指定了路径，获取该目录的内容
+        const response = await apiService.getDirectoryContents(projectId, currentPath);
+        const filesOnly = response.items.filter((item: any) => item.type === 'file');
+        setFiles(filesOnly);
+      } else {
+        // 如果没有指定路径，获取项目根目录的文件
+        const response = await apiService.getProjectFiles(projectId, { limit: 1000, offset: 0 });
+        const filesOnly = response.files.filter((item: FileItem) => item.type === 'file');
+        // 只显示根目录下的文件（不包含子目录中的文件）
+        const rootFiles = filesOnly.filter((file: FileItem) => {
+          const pathParts = file.relativePath.split('/');
+          return pathParts.length === 1; // 只有一级路径的文件
+        });
+        setFiles(rootFiles);
+      }
     } catch (error) {
       console.error('Failed to load files:', error);
       setError('加载文件失败');
@@ -205,7 +212,9 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">文件列表</h2>
+            <h2 className="text-lg font-semibold">
+              {currentPath ? `${currentPath.split('/').pop()} 目录` : '文件列表'}
+            </h2>
             <p className="text-sm text-muted-foreground">{sortedFiles.length} 个文件</p>
           </div>
           <div className="flex items-center space-x-2">
@@ -233,15 +242,15 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
       <div className="flex-1 p-4 overflow-auto">
         {sortedFiles.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {sortedFiles.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onSelect={onFileSelect}
-                isSelected={selectedFileId === file.id}
-              />
-            ))}
-          </div>
+          {sortedFiles.map((file) => (
+            <FilePreview
+              key={file.id}
+              file={file}
+              onClick={() => onFileSelect?.(file)}
+              className={selectedFileId === file.id.toString() ? 'ring-2 ring-primary' : ''}
+            />
+          ))}
+        </div>
         ) : (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">

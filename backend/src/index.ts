@@ -22,12 +22,24 @@ const app: express.Application = express();
 const PORT = process.env.PORT || 3001;
 
 // 中间件配置
-app.use(helmet());
+// app.use(helmet({
+//   crossOriginResourcePolicy: false,
+//   crossOriginEmbedderPolicy: false,
+//   contentSecurityPolicy: {
+//     directives: {
+//       defaultSrc: ["'self'"],
+//       imgSrc: ["'self'", "data:", "*"],
+//       mediaSrc: ["'self'", "*"]
+//     }
+//   }
+// }));
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['http://localhost:3000'] 
     : '*',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 }));
 app.use(morgan('combined'));
 app.use(express.json({ limit: '50mb' }));
@@ -35,6 +47,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 静态文件服务
 app.use('/thumbnails', express.static(path.join(__dirname, '../thumbnails')));
+app.use('/data', express.static(path.join(__dirname, '../data')));
 
 // API 路由
 app.use('/api/projects', projectRoutes);

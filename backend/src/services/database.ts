@@ -1,8 +1,8 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs-extra';
-import { CREATE_PROJECTS_TABLE, CREATE_FILES_TABLE, CREATE_INDEXES, ProjectModel, FileModel } from '../models/index.js';
-import { Project, FileItem, DatabaseConfig } from '../types/index.js';
+import { CREATE_PROJECTS_TABLE, CREATE_INDEXES, ProjectModel } from '../models/index.js';
+import { Project, DatabaseConfig } from '../types/index.js';
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -61,10 +61,6 @@ export class DatabaseService {
       // 创建项目表
       await this.execute(CREATE_PROJECTS_TABLE);
       console.log('✅ Projects table created');
-      
-      // 创建文件表
-      await this.execute(CREATE_FILES_TABLE);
-      console.log('✅ Files table created');
       
       // 创建索引
       for (const indexSql of CREATE_INDEXES) {
@@ -142,56 +138,7 @@ export class DatabaseService {
     return rows.length > 0 ? ProjectModel.fromRow(rows[0]) : null;
   }
   
-  // 文件相关操作
-  public async createFile(file: Omit<FileItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<FileItem> {
-    const row = FileModel.toRow(file);
-    const result = await this.execute(
-      `INSERT INTO files (project_id, name, path, relative_path, size, type, mime_type, extension, last_modified, thumbnail_path) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [row.project_id, row.name, row.path, row.relative_path, row.size, row.type, row.mime_type, row.extension, row.last_modified, row.thumbnail_path]
-    );
-    
-    const rows = await this.query('SELECT * FROM files WHERE id = ?', [result.lastInsertRowid]);
-    return FileModel.fromRow(rows[0]);
-  }
-  
-  public async getFilesByProject(projectId: number, type?: 'file' | 'directory'): Promise<FileItem[]> {
-    let sql = 'SELECT * FROM files WHERE project_id = ?';
-    const params: any[] = [projectId];
-    
-    if (type) {
-      sql += ' AND type = ?';
-      params.push(type);
-    }
-    
-    sql += ' ORDER BY type DESC, name ASC';
-    
-    const rows = await this.query(sql, params);
-    return rows.map(row => FileModel.fromRow(row));
-  }
-  
-  public async getFilesByDirectory(projectId: number, directoryPath: string): Promise<FileItem[]> {
-    const rows = await this.query(
-      'SELECT * FROM files WHERE project_id = ? AND relative_path LIKE ? AND type = "file" ORDER BY name ASC',
-      [projectId, `${directoryPath}%`]
-    );
-    return rows.map(row => FileModel.fromRow(row));
-  }
-  
-  public async updateFile(id: number, updates: Partial<FileItem>): Promise<void> {
-    const row = FileModel.toRow(updates);
-    const fields = Object.keys(row).filter(key => row[key] !== undefined);
-    const values = fields.map(key => row[key]);
-    
-    if (fields.length === 0) return;
-    
-    const sql = `UPDATE files SET ${fields.map(f => `${f} = ?`).join(', ')} WHERE id = ?`;
-    await this.execute(sql, [...values, id]);
-  }
-  
-  public async deleteFilesByProject(projectId: number): Promise<void> {
-    await this.execute('DELETE FROM files WHERE project_id = ?', [projectId]);
-  }
+  // 文件相关操作已移除，现在直接从文件系统读取
   
   public async close(): Promise<void> {
     return new Promise((resolve) => {

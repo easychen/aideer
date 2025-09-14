@@ -1,23 +1,82 @@
 import { ChevronDown, Folder, File, ChevronRight, RefreshCw, FilePlus, FolderPlus, Minimize2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useProjectStore } from '../../stores/useProjectStore';
+import { apiService } from '../../services/api';
+import { DirectoryNode, FileItem } from '../../types/index';
+import { usePathContext } from '../../contexts/PathContext';
+import FileDetailModal from '../file-detail/FileDetailModal';
 
 interface FileNode {
   id: string;
   name: string;
+  path: string;
   type: 'file' | 'folder';
   children?: FileNode[];
 }
 
-const FileTreeItem = ({ node, level = 0 }: { node: FileNode; level?: number }) => {
+const FileTreeItem = ({ node, level = 0, projectId, onFileClick }: { node: FileNode; level?: number; projectId: number; onFileClick?: (file: FileItem) => void }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = node.children && node.children.length > 0;
+  const [children, setChildren] = useState<FileNode[]>(node.children || []);
+  const [loading, setLoading] = useState(false);
+  const [hasLoadedChildren, setHasLoadedChildren] = useState(!!node.children);
+  const { setCurrentPath } = usePathContext();
+  
+  const hasChildren = node.type === 'folder' && (children.length > 0 || !hasLoadedChildren);
+  
+  const handleClick = async () => {
+    if (node.type === 'file') {
+      // 处理文件点击 - 打开详情浮层
+      if (onFileClick) {
+        // 构造FileItem对象
+        const fileItem: FileItem = {
+            id: node.id,
+            projectId: projectId,
+            name: node.name,
+            path: node.path,
+            relativePath: node.path,
+            type: 'file',
+            size: 0, // 这里需要从API获取，暂时设为0
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            thumbnailPath: undefined
+          };
+        onFileClick(fileItem);
+      }
+      return;
+    }
+    
+    // 处理文件夹点击
+    setCurrentPath(node.path);
+    
+    if (!isExpanded && !hasLoadedChildren) {
+      setLoading(true);
+      try {
+        const response = await apiService.getDirectoryContents(projectId, node.path);
+        const childNodes: FileNode[] = response.items.map((item: DirectoryNode) => ({
+          id: item.id.toString(),
+          name: item.name,
+          path: item.path,
+          type: item.type === 'directory' ? 'folder' : 'file'
+        }));
+        setChildren(childNodes);
+        setHasLoadedChildren(true);
+      } catch (error) {
+        console.error('Failed to load directory contents:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    setIsExpanded(!isExpanded);
+  };
   
   return (
     <div>
       <div 
         className="flex items-center py-1 px-2 hover:bg-muted/50 rounded cursor-pointer transition-colors"
         style={{ paddingLeft: `${level * 16 + 8}px` }}
-        onClick={() => node.type === 'folder' && setIsExpanded(!isExpanded)}
+        onClick={handleClick}
       >
         {node.type === 'folder' && hasChildren && (
           <ChevronRight 
@@ -29,7 +88,11 @@ const FileTreeItem = ({ node, level = 0 }: { node: FileNode; level?: number }) =
         {node.type === 'folder' && !hasChildren && (
           <div className="w-4 h-4 mr-1" />
         )}
-        {node.type === 'folder' ? (
+        {loading ? (
+          <div className="w-4 h-4 mr-2 animate-spin">
+            <RefreshCw className="w-4 h-4" />
+          </div>
+        ) : node.type === 'folder' ? (
           <Folder className="w-4 h-4 text-muted-foreground mr-2" />
         ) : (
           <File className="w-4 h-4 text-muted-foreground mr-2" />
@@ -39,77 +102,132 @@ const FileTreeItem = ({ node, level = 0 }: { node: FileNode; level?: number }) =
       
       {node.type === 'folder' && isExpanded && hasChildren && (
         <div>
-          {node.children!.map((child) => (
-            <FileTreeItem key={child.id} node={child} level={level + 1} />
-          ))}
+          {children.map((child) => (
+        <FileTreeItem key={child.id} node={child} level={level + 1} projectId={projectId} onFileClick={onFileClick} />
+      ))}
         </div>
       )}
     </div>
   );
 };
 
-const FileTree = () => {
-  const fileTreeData: FileNode[] = [
-    {
-      id: '1',
-      name: 'src',
-      type: 'folder',
-      children: [
-        {
-          id: '2',
-          name: 'components',
-          type: 'folder',
-          children: [
-            { id: '3', name: 'Header.tsx', type: 'file' },
-            { id: '4', name: 'Sidebar.tsx', type: 'file' },
-            { id: '5', name: 'Layout.tsx', type: 'file' }
-          ]
-        },
-        {
-          id: '6',
-          name: 'pages',
-          type: 'folder',
-          children: [
-            { id: '7', name: 'HomePage.tsx', type: 'file' },
-            { id: '8', name: 'ProjectPage.tsx', type: 'file' }
-          ]
-        },
-        { id: '9', name: 'App.tsx', type: 'file' },
-        { id: '10', name: 'main.tsx', type: 'file' }
-      ]
-    },
-    {
-      id: '11',
-      name: 'public',
-      type: 'folder',
-      children: [
-        { id: '12', name: 'index.html', type: 'file' },
-        { id: '13', name: 'favicon.ico', type: 'file' }
-      ]
-    },
-    { id: '14', name: 'package.json', type: 'file' },
-    { id: '15', name: 'vite.config.ts', type: 'file' },
-    { id: '16', name: 'tailwind.config.js', type: 'file' }
-  ];
+const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTrigger?: number }) => {
+  const [treeData, setTreeData] = useState<FileNode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    loadFileTree();
+  }, [projectId]);
+  
+  // 监听刷新触发器
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadFileTree();
+    }
+  }, [refreshTrigger]);
+  
+  const loadFileTree = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const tree = await apiService.getDirectoryTree(projectId);
+      const nodes = Array.isArray(tree) ? tree : [tree];
+      const fileNodes: FileNode[] = nodes.map((node: DirectoryNode) => ({
+        id: node.id.toString(),
+        name: node.name,
+        path: node.path,
+        type: node.type === 'directory' ? 'folder' : 'file',
+        children: node.children?.map((child: DirectoryNode) => ({
+          id: child.id.toString(),
+          name: child.name,
+          path: child.path,
+          type: child.type === 'directory' ? 'folder' : 'file'
+        }))
+      }));
+      setTreeData(fileNodes);
+    } catch (error) {
+      console.error('Failed to load file tree:', error);
+      setError('加载文件树失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center space-x-2 animate-pulse">
+            <div className="w-4 h-4 bg-muted rounded" />
+            <div className="h-4 bg-muted rounded flex-1" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-sm text-destructive mb-2">{error}</p>
+        <button 
+          onClick={loadFileTree}
+          className="text-xs text-primary hover:underline"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
+  
+  if (treeData.length === 0) {
+    return (
+      <div className="text-center py-4 text-sm text-muted-foreground">
+        暂无文件
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-1">
-      {fileTreeData.map((node) => (
-        <FileTreeItem key={node.id} node={node} />
+      {treeData.map((node) => (
+        <FileTreeItem 
+          key={node.id} 
+          node={node} 
+          projectId={projectId} 
+          onFileClick={(file) => {
+            setSelectedFile(file);
+            setIsDetailModalOpen(true);
+          }}
+        />
       ))}
+      
+      <FileDetailModal
+        file={selectedFile}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedFile(null);
+        }}
+      />
     </div>
   );
 };
 
-const Sidebar = () => {
-  const [selectedProject, setSelectedProject] = useState('当前项目');
+interface SidebarProps {
+  refreshTrigger?: number;
+}
+
+const Sidebar = ({ refreshTrigger }: SidebarProps) => {
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
   
-  const projects = [
-    { id: '1', name: '当前项目', path: '/Users/easy/Code/gitcode/aideer' },
-    { id: '2', name: '示例项目1', path: '/Users/easy/Documents/project1' },
-    { id: '3', name: '示例项目2', path: '/Users/easy/Documents/project2' }
-  ];
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   return (
     <div className="h-full bg-card flex flex-col">
@@ -122,7 +240,7 @@ const Sidebar = () => {
           >
             <div className="flex items-center space-x-2">
               <Folder className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm truncate">{selectedProject}</span>
+              <span className="text-sm truncate">{currentProject?.name || '选择项目'}</span>
             </div>
             <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -134,7 +252,7 @@ const Sidebar = () => {
                   key={project.id}
                   className="w-full flex items-center space-x-2 p-2 text-left hover:bg-muted/50 transition-colors first:rounded-t-md last:rounded-b-md"
                   onClick={() => {
-                    setSelectedProject(project.name);
+                    setCurrentProject(project);
                     setIsProjectDropdownOpen(false);
                   }}
                 >
@@ -152,7 +270,13 @@ const Sidebar = () => {
       
       {/* 文件树 */}
       <div className="flex-1 p-4 overflow-y-auto">
-        <FileTree />
+        {currentProject ? (
+          <FileTree projectId={currentProject.id} refreshTrigger={refreshTrigger} />
+        ) : (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            请选择一个项目
+          </div>
+        )}
       </div>
       
       {/* 底部工具栏 */}

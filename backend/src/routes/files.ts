@@ -1,4 +1,8 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs-extra';
+import crypto from 'crypto';
 import { DatabaseService } from '../services/database.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { ApiResponse, FileItem, FileQueryParams } from '../types/index.js';
@@ -6,6 +10,19 @@ import { ApiResponse, FileItem, FileQueryParams } from '../types/index.js';
 const router: express.Router = express.Router();
 const dbService = DatabaseService.getInstance();
 const fsService = FileSystemService.getInstance();
+
+// 生成文件ID的辅助函数
+function generateFileId(filePath: string): string {
+  return crypto.createHash('md5').update(filePath).digest('hex');
+}
+
+// 配置multer用于文件上传
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB限制
+  },
+});
 
 // 获取项目文件列表
 router.get('/', async (req, res) => {
@@ -19,14 +36,37 @@ router.get('/', async (req, res) => {
       } as ApiResponse);
     }
     
-    const files = await dbService.getFilesByProject(parseInt(projectId.toString()), type);
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId.toString()));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 直接从文件系统扫描文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    
+    // 为每个文件生成ID
+    const filesWithId = scannedFiles.map(file => ({
+      ...file,
+      id: generateFileId(file.path)
+    }));
     
     // 如果指定了目录路径，过滤文件
-    let filteredFiles = files;
+    let filteredFiles = filesWithId;
     if (directoryPath) {
-      filteredFiles = files.filter(file => 
+      filteredFiles = filesWithId.filter(file => 
         file.relativePath.startsWith(directoryPath) || file.relativePath === directoryPath
       );
+    }
+    
+    // 如果指定了类型，进一步过滤
+    if (type) {
+      filteredFiles = filteredFiles.filter(file => file.type === type);
     }
     
     // 如果指定了MIME类型，进一步过滤
@@ -36,8 +76,8 @@ router.get('/', async (req, res) => {
     
     // 分页处理
     const startIndex = offset ? parseInt(offset.toString()) : 0;
-     const endIndex = limit ? startIndex + parseInt(limit.toString()) : filteredFiles.length;
-     const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
+    const endIndex = limit ? startIndex + parseInt(limit.toString()) : filteredFiles.length;
+    const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
     
     return res.json({
       success: true,
@@ -61,10 +101,30 @@ router.get('/', async (req, res) => {
 // 获取文件内容
 router.get('/:id/content', async (req, res) => {
   try {
-    const fileId = parseInt(req.params.id);
-    // 暂时使用getFilesByProject方法获取文件
-     const files = await dbService.getFilesByProject(0); // 需要实现getFileById方法
-     const file = files.find(f => f.id === fileId);
+    const fileId = req.params.id;
+    const { projectId } = req.query;
+    
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID is required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId.toString()));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件并查找匹配的文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!file) {
       return res.status(404).json({
@@ -82,10 +142,18 @@ router.get('/:id/content', async (req, res) => {
     
     const content = await fsService.readFile(file.path);
     
+    // 设置响应头
+    const mimeType = file.mimeType || 'text/plain';
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    
     return res.json({
       success: true,
       data: {
-        file: file,
+        file: { ...file, id: fileId },
         content: content
       },
       message: 'File content retrieved successfully'
@@ -102,10 +170,30 @@ router.get('/:id/content', async (req, res) => {
 // 获取单个文件信息
 router.get('/:id', async (req, res) => {
   try {
-    const fileId = parseInt(req.params.id);
-    // 暂时使用getFilesByProject方法获取文件
-     const files = await dbService.getFilesByProject(0); // 需要实现getFileById方法
-     const file = files.find(f => f.id === fileId);
+    const fileId = req.params.id;
+    const { projectId } = req.query;
+    
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID is required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId.toString()));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件并查找匹配的文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!file) {
       return res.status(404).json({
@@ -116,7 +204,7 @@ router.get('/:id', async (req, res) => {
     
     return res.json({
       success: true,
-      data: file,
+      data: { ...file, id: fileId },
       message: 'File info retrieved successfully'
     } as ApiResponse<FileItem>);
   } catch (error) {
@@ -124,6 +212,95 @@ router.get('/:id', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch file info'
+    } as ApiResponse);
+  }
+});
+
+// 文件上传接口
+router.post('/upload', upload.array('files'), async (req, res) => {
+  try {
+    const { projectId, targetPath = '', filePaths } = req.body;
+    const files = req.files as Express.Multer.File[];
+    
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID is required'
+      } as ApiResponse);
+    }
+    
+    if (!files || files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No files provided'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    const uploadedFiles: FileItem[] = [];
+    const filePathsArray = filePaths ? JSON.parse(filePaths) : [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // 使用前端传递的文件路径信息，如果没有则使用原始文件名
+      const fileRelativePath = filePathsArray[i] || file.originalname;
+      // 构建目标路径
+      const relativePath = path.join(targetPath, fileRelativePath);
+      const fullPath = path.join(project.path, relativePath);
+       
+       // 确保目标目录存在
+       await fs.ensureDir(path.dirname(fullPath));
+       
+       // 写入文件
+       await fs.writeFile(fullPath, file.buffer);
+       
+       // 获取文件信息（不保存到数据库）
+       const fileStats = await fs.stat(fullPath);
+       const mimeType = require('mime-types').lookup(fullPath) || undefined;
+       
+       const fileItem: FileItem = {
+         id: generateFileId(fullPath),
+         projectId: project.id,
+         name: path.basename(fullPath),
+         path: fullPath,
+         relativePath: relativePath,
+         size: fileStats.size,
+         type: 'file',
+         mimeType: mimeType,
+         extension: path.extname(fullPath).slice(1) || undefined,
+         createdAt: fileStats.birthtime.toISOString(),
+         updatedAt: fileStats.mtime.toISOString(),
+         lastModified: fileStats.mtime.toISOString(),
+         thumbnailPath: undefined
+       };
+       
+       uploadedFiles.push(fileItem);
+    }
+    
+    return res.json({
+      success: true,
+      data: {
+        files: uploadedFiles,
+        count: uploadedFiles.length
+      },
+      message: `Successfully uploaded ${uploadedFiles.length} files`
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to upload files'
     } as ApiResponse);
   }
 });

@@ -97,11 +97,6 @@ router.post('/:id/scan', async (req, res) => {
     // 扫描目录
     const files = await fsService.scanDirectory(project.path, projectId);
     
-    // 保存文件信息到数据库
-    for (const file of files) {
-      await dbService.createFile(file);
-    }
-    
     return res.json({
       success: true,
       data: { scannedFiles: files.length },

@@ -1,7 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 import { FileItem } from '../types';
 import mime from 'mime-types';
+
+// 生成文件ID的辅助函数
+function generateFileId(filePath: string): string {
+  return crypto.createHash('md5').update(filePath).digest('hex');
+}
 
 export class FileSystemService {
   private static instance: FileSystemService;
@@ -38,6 +44,13 @@ export class FileSystemService {
     const results: FileItem[] = [];
     
     try {
+      // 检查目录是否存在
+      const exists = await this.isValidDirectory(dirPath);
+      
+      if (!exists) {
+        return results;
+      }
+      
       await this.scanDirectoryRecursive(dirPath, dirPath, projectId, results);
     } catch (error) {
       console.error('Error scanning directory:', error);
@@ -70,7 +83,7 @@ export class FileSystemService {
       if (entry.isDirectory()) {
         // 添加目录信息
         results.push({
-            id: 0, // 将在数据库中生成
+            id: generateFileId(fullPath),
             projectId: projectId,
             name: entry.name,
             path: fullPath,
@@ -89,7 +102,7 @@ export class FileSystemService {
         const fileInfo = await this.getFileInfo(fullPath);
         
         results.push({
-            id: 0, // 将在数据库中生成
+            id: generateFileId(fullPath),
             projectId: projectId,
             name: entry.name,
             path: fullPath,

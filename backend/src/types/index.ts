@@ -10,7 +10,7 @@ export interface Project {
 
 // 文件相关类型定义
 export interface FileItem {
-  id: number;
+  id: string;
   projectId: number;
   name: string;
   path: string;
@@ -27,7 +27,7 @@ export interface FileItem {
 
 // 目录树节点
 export interface DirectoryNode {
-  id: number;
+  id: string;
   name: string;
   path: string;
   type: 'file' | 'directory';

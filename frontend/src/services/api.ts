@@ -89,13 +89,17 @@ class ApiService {
     return response.data.data || response.data;
   }
 
-  async getFileById(fileId: number): Promise<FileItem> {
-    const response = await this.client.get<ApiResponse<FileItem>>(`/files/${fileId}`);
+  async getFileById(fileId: string, projectId: number): Promise<FileItem> {
+    const response = await this.client.get<ApiResponse<FileItem>>(`/files/${fileId}`, {
+      params: { projectId }
+    });
     return response.data.data || response.data;
   }
 
-  async getFileContent(fileId: number): Promise<{ file: FileItem; content: string }> {
-    const response = await this.client.get<ApiResponse<{ file: FileItem; content: string }>>(`/files/${fileId}/content`);
+  async getFileContent(fileId: string, projectId: number): Promise<{ file: FileItem; content: string }> {
+    const response = await this.client.get<ApiResponse<{ file: FileItem; content: string }>>(`/files/${fileId}/content`, {
+      params: { projectId }
+    });
     return response.data.data || response.data;
   }
 
@@ -122,6 +126,30 @@ class ApiService {
       }
     });
     return response.data.data || response.data;
+  }
+
+  // 文件上传API
+  async uploadFile(formData: FormData): Promise<{ success: boolean; data?: any; error?: string; message?: string }> {
+    try {
+      const response = await this.client.post<ApiResponse<{ success: boolean; data?: any }>>(
+        `/files/upload`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      return {
+        success: true,
+        data: response.data.data || response.data
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Upload failed'
+      };
+    }
   }
 
   // 健康检查

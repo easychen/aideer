@@ -23,7 +23,7 @@ interface FileState {
   
   // 操作
   browseDirectory: (path: string) => Promise<void>;
-  getFileContent: (filePath: string) => Promise<void>;
+  getFileContent: (fileId: string, projectId: number) => Promise<void>;
   searchFiles: (options: SearchOptions) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   selectFile: (file: FileItem) => void;
@@ -86,10 +86,10 @@ export const useFileStore = create<FileState>()(devtools(
     },
     
     // 获取文件内容
-    getFileContent: async (filePath: string) => {
+    getFileContent: async (fileId: string, projectId: number) => {
       set({ loading: true, error: null });
       try {
-        const result = await apiService.getFileContent(parseInt(filePath)); // 假设filePath是文件ID的字符串
+        const result = await apiService.getFileContent(fileId, projectId);
         set({ 
           previewContent: result.content,
           loading: false 
@@ -160,7 +160,9 @@ export const useFileStore = create<FileState>()(devtools(
     setPreviewFile: (file: FileItem | null) => {
       set({ previewFile: file, previewContent: null });
       if (file && file.type === 'file') {
-        get().getFileContent(file.path);
+        // 需要从外部传入projectId，这里暂时使用0作为占位符
+        // TODO: 重构以支持正确的projectId传递
+        get().getFileContent(file.id, file.projectId);
       }
     },
     

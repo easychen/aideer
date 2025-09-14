@@ -21,7 +21,7 @@ interface ProjectState {
 }
 
 export const useProjectStore = create<ProjectState>()(devtools(
-  (set) => ({
+  (set, get) => ({
     // 初始状态
     projects: [],
     currentProject: null,
@@ -33,7 +33,19 @@ export const useProjectStore = create<ProjectState>()(devtools(
       set({ loading: true, error: null });
       try {
         const projects = await apiService.getProjects();
-        set({ projects, loading: false });
+        const { currentProject } = get();
+        
+        // 如果没有当前项目且有项目列表，设置第一个为当前项目
+        let newCurrentProject = currentProject;
+        if (!currentProject && projects.length > 0) {
+          newCurrentProject = projects[0];
+        }
+        
+        set({ 
+          projects, 
+          currentProject: newCurrentProject,
+          loading: false 
+        });
       } catch (error) {
         set({ 
           error: error instanceof Error ? error.message : 'Failed to fetch projects',
