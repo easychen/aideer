@@ -1,23 +1,76 @@
 import { Base64 } from 'js-base64';
 
-// CharacterCard数据接口
-export interface CharacterData {
-  name: string;
-  gender?: string;
+// Character Card V2 规范类型定义
+export interface CharacterBookEntry {
+  keys: string[];
+  content: string;
+  extensions: Record<string, any>;
+  enabled: boolean;
+  insertion_order: number;
+  case_sensitive?: boolean;
+  // 可选字段
+  name?: string;
+  priority?: number;
+  id?: number;
+  comment?: string;
+  selective?: boolean;
+  secondary_keys?: string[];
+  constant?: boolean;
+  position?: 'before_char' | 'after_char';
+}
+
+export interface CharacterBook {
+  name?: string;
   description?: string;
+  scan_depth?: number;
+  token_budget?: number;
+  recursive_scanning?: boolean;
+  extensions: Record<string, any>;
+  entries: CharacterBookEntry[];
+}
+
+// CCv2规范的完整CharacterData接口
+export interface CharacterData {
+  // V1字段
+  name: string;
+  description: string;
+  personality: string;
+  scenario: string;
+  first_mes: string;
+  mes_example: string;
+  
+  // V2新增字段
+  creator_notes: string;
+  system_prompt: string;
+  post_history_instructions: string;
+  alternate_greetings: string[];
+  character_book?: CharacterBook;
+  
+  // May 8th additions
+  tags: string[];
+  creator: string;
+  character_version: string;
+  extensions: Record<string, any>;
+  
+  // 兼容性字段（用于向后兼容）
+  gender?: string;
   fullDescription?: string;
-  personality?: string;
-  scenario?: string;
   exampleDialogue?: string;
   creatorNotes?: string;
   systemPrompt?: string;
   postHistoryInstructions?: string;
   alternateGreetings?: string[];
-  tags?: string[];
-  creator?: string;
   characterVersion?: string;
   firstMes?: string;
+  
   [key: string]: any;
+}
+
+// CCv2规范的完整卡片结构
+export interface TavernCardV2 {
+  spec: 'chara_card_v2';
+  spec_version: '2.0';
+  data: CharacterData;
 }
 
 // PNG解析结果接口
@@ -207,22 +260,68 @@ export class PngProcessor {
    * @returns 映射后的角色数据
    */
   private static mapToCharacterData(rawData: any): CharacterData {
+    // 处理CharacterBook数据
+    let characterBook: CharacterBook | undefined;
+    if (rawData.character_book) {
+      characterBook = {
+        name: rawData.character_book.name,
+        description: rawData.character_book.description,
+        scan_depth: rawData.character_book.scan_depth,
+        token_budget: rawData.character_book.token_budget,
+        recursive_scanning: rawData.character_book.recursive_scanning,
+        extensions: rawData.character_book.extensions || {},
+        entries: (rawData.character_book.entries || []).map((entry: any) => ({
+          keys: entry.keys || [],
+          content: entry.content || '',
+          extensions: entry.extensions || {},
+          enabled: entry.enabled !== false,
+          insertion_order: entry.insertion_order || 0,
+          case_sensitive: entry.case_sensitive,
+          name: entry.name,
+          priority: entry.priority,
+          id: entry.id,
+          comment: entry.comment,
+          selective: entry.selective,
+          secondary_keys: entry.secondary_keys,
+          constant: entry.constant,
+          position: entry.position
+        }))
+      };
+    }
+
     return {
+      // V1必需字段
       name: rawData.name || '',
-      gender: rawData.gender || '',
       description: rawData.description || rawData.char_persona || '',
-      fullDescription: rawData.personality || rawData.full_description || rawData.char_persona || '',
       personality: rawData.personality || rawData.char_persona || '',
       scenario: rawData.scenario || rawData.world_scenario || '',
+      first_mes: rawData.first_mes || '',
+      mes_example: rawData.mes_example || rawData.example_dialogue || '',
+      
+      // V2新增字段
+      creator_notes: rawData.creator_notes || '',
+      system_prompt: rawData.system_prompt || rawData.system || '',
+      post_history_instructions: rawData.post_history_instructions || '',
+      alternate_greetings: rawData.alternate_greetings || [],
+      character_book: characterBook,
+      
+      // May 8th additions
+      tags: rawData.tags || [],
+      creator: rawData.creator || '',
+      character_version: rawData.character_version || '',
+      extensions: rawData.extensions || {},
+      
+      // 兼容性字段
+      gender: rawData.gender || '',
+      fullDescription: rawData.personality || rawData.full_description || rawData.char_persona || '',
       exampleDialogue: rawData.mes_example || rawData.example_dialogue || '',
       creatorNotes: rawData.creator_notes || '',
       systemPrompt: rawData.system_prompt || rawData.system || '',
       postHistoryInstructions: rawData.post_history_instructions || '',
       alternateGreetings: rawData.alternate_greetings || [],
-      tags: rawData.tags || [],
-      creator: rawData.creator || '',
       characterVersion: rawData.character_version || '',
       firstMes: rawData.first_mes || '',
+      
       // 保留其他所有字段
       ...rawData
     };
@@ -275,9 +374,41 @@ export class PngProcessor {
    */
   static embedCharacterData(originalArrayBuffer: ArrayBuffer, characterData: CharacterData): ArrayBuffer {
     try {
-      // 创建tEXt块
-      const encodedData = Base64.encode(JSON.stringify(characterData));
+      // 创建CCv2格式的数据结构
+      const ccv2Data: TavernCardV2 = {
+        spec: 'chara_card_v2',
+        spec_version: '2.0',
+        data: {
+          // V1必需字段
+          name: characterData.name || '',
+          description: characterData.description || '',
+          personality: characterData.personality || '',
+          scenario: characterData.scenario || '',
+          first_mes: characterData.first_mes || characterData.firstMes || '',
+          mes_example: characterData.mes_example || characterData.exampleDialogue || '',
+          
+          // V2新增字段
+          creator_notes: characterData.creator_notes || characterData.creatorNotes || '',
+          system_prompt: characterData.system_prompt || characterData.systemPrompt || '',
+          post_history_instructions: characterData.post_history_instructions || characterData.postHistoryInstructions || '',
+          alternate_greetings: characterData.alternate_greetings || characterData.alternateGreetings || [],
+          character_book: characterData.character_book,
+          
+          // May 8th additions
+          tags: characterData.tags || [],
+          creator: characterData.creator || '',
+          character_version: characterData.character_version || characterData.characterVersion || '',
+          extensions: characterData.extensions || {}
+        }
+      };
+      
+      // 创建tEXt块 - 使用chara关键字以保持兼容性
+      const encodedData = Base64.encode(JSON.stringify(ccv2Data));
       const charaChunk = this.createTextChunk('chara', encodedData);
+      
+      // 同时创建ccv3块以支持新格式
+      const ccv3EncodedData = Base64.encode(JSON.stringify(ccv2Data));
+      const ccv3Chunk = this.createTextChunk('ccv3', ccv3EncodedData);
       
       const view = new DataView(originalArrayBuffer);
       const chunks = [];
@@ -316,6 +447,7 @@ export class PngProcessor {
         // 在IEND块之前插入新的角色数据
         if (type === 'IEND') {
           chunks.push(charaChunk);
+          chunks.push(ccv3Chunk);
         }
         
         chunks.push(currentChunk);

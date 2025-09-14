@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, User, MessageSquare, Settings, Tag, Edit, Save, X, Plus } from 'lucide-react';
+import { Loader2, User, MessageSquare, Settings, Tag, Edit, Save, X, Plus, Book, FileText, Zap, History, MessageCircle, Hash, UserCheck, GitBranch, Puzzle, BookOpen } from 'lucide-react';
 import { PngProcessor, CharacterData } from './utils/pngProcessor';
 import type { PluginComponentProps } from '../../types';
 
@@ -328,100 +328,142 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
         {renderSaveDialog()}
         <div className="p-6 space-y-6">
           {/* 编辑控制按钮 */}
-          <div className="flex justify-end gap-2">
-            {!isEditing ? (
-              <button
-                onClick={startEditing}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                <Edit className="h-4 w-4" />
-                编辑
-              </button>
-            ) : (
-              <div className="flex gap-2">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-600" />
+              <h2 className="text-xl font-bold">角色卡片 - CCv2</h2>
+              {displayData.character_version && (
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+                  v{displayData.character_version}
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {!isEditing ? (
                 <button
-                  onClick={showSaveOptions}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  onClick={startEditing}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
-                  <Save className="h-4 w-4" />
-                  保存
+                  <Edit className="h-4 w-4" />
+                  编辑
                 </button>
-                <button
-                  onClick={cancelEditing}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                  取消
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={showSaveOptions}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  >
+                    <Save className="h-4 w-4" />
+                    保存
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                    取消
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           {/* 基本信息 */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <User className="h-5 w-5" />
+                <UserCheck className="h-5 w-5" />
                 基本信息
               </h3>
             </div>
             <div className="p-4 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">角色名称</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={displayData.name || ''}
-                    onChange={(e) => updateEditData('name', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    placeholder="输入角色名称"
-                  />
-                ) : (
-                  <p className="text-lg font-semibold">{displayData.name || '未知'}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">角色名称 *</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={displayData.name || ''}
+                      onChange={(e) => updateEditData('name', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="输入角色名称"
+                      required
+                    />
+                  ) : (
+                    <p className="text-lg font-semibold">{displayData.name || '未知'}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">创作者</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={displayData.creator || ''}
+                      onChange={(e) => updateEditData('creator', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="输入创作者"
+                    />
+                  ) : (
+                    <p>{displayData.creator || '未知'}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">角色版本</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={displayData.character_version || displayData.characterVersion || ''}
+                      onChange={(e) => updateEditData('character_version', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="输入版本号"
+                    />
+                  ) : (
+                    <p>{displayData.character_version || displayData.characterVersion || '1.0'}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">性别</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={displayData.gender || ''}
+                      onChange={(e) => updateEditData('gender', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="输入性别"
+                    />
+                  ) : (
+                    displayData.gender && <p>{displayData.gender}</p>
+                  )}
+                </div>
               </div>
               
+              {/* 标签 */}
               <div>
-                <label className="text-sm font-medium text-muted-foreground">性别</label>
+                <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Hash className="h-4 w-4" />
+                  标签
+                </label>
                 {isEditing ? (
                   <input
                     type="text"
-                    value={displayData.gender || ''}
-                    onChange={(e) => updateEditData('gender', e.target.value)}
+                    value={(displayData.tags || []).join(', ')}
+                    onChange={(e) => updateEditData('tags', e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag))}
                     className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    placeholder="输入性别"
+                    placeholder="输入标签，用逗号分隔"
                   />
                 ) : (
-                  displayData.gender && <p>{displayData.gender}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">创作者</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={displayData.creator || ''}
-                    onChange={(e) => updateEditData('creator', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    placeholder="输入创作者"
-                  />
-                ) : (
-                  displayData.creator && <p>{displayData.creator}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">版本</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={displayData.characterVersion || ''}
-                    onChange={(e) => updateEditData('characterVersion', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    placeholder="输入版本"
-                  />
-                ) : (
-                  displayData.characterVersion && <p>{displayData.characterVersion}</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(displayData.tags || []).map((tag, index) => (
+                      <span key={index} className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                    {(!displayData.tags || displayData.tags.length === 0) && (
+                      <span className="text-gray-500 text-sm">无标签</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -431,7 +473,10 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
           {(isEditing || displayData.description || displayData.fullDescription) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold">角色描述</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  角色描述
+                </h3>
               </div>
               <div className="p-4">
                 {isEditing ? (
@@ -440,6 +485,7 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
                     onChange={(e) => updateEditData('fullDescription', e.target.value)}
                     className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical"
                     placeholder="输入角色描述"
+                    required
                   />
                 ) : (
                   <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
@@ -454,7 +500,10 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
           {(isEditing || displayData.personality) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold">性格特征</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  性格特征
+                </h3>
               </div>
               <div className="p-4">
                 {isEditing ? (
@@ -463,6 +512,7 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
                     onChange={(e) => updateEditData('personality', e.target.value)}
                     className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical"
                     placeholder="输入性格特征"
+                    required
                   />
                 ) : (
                   <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{displayData.personality}</p>
@@ -475,7 +525,10 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
           {(isEditing || displayData.scenario) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold">场景设定</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Book className="h-5 w-5" />
+                  场景设定
+                </h3>
               </div>
               <div className="p-4">
                 {isEditing ? (
@@ -484,6 +537,7 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
                     onChange={(e) => updateEditData('scenario', e.target.value)}
                     className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical"
                     placeholder="输入场景设定"
+                    required
                   />
                 ) : (
                   <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{displayData.scenario}</p>
@@ -513,7 +567,10 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
           {(isEditing || displayData.firstMes) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold">首次问候</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  首次问候
+                </h3>
               </div>
               <div className="p-4">
                 {isEditing ? (
@@ -522,6 +579,7 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
                     onChange={(e) => updateEditData('firstMes', e.target.value)}
                     className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical"
                     placeholder="输入首次问候"
+                    required
                   />
                 ) : (
                   <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{displayData.firstMes}</p>
@@ -531,23 +589,38 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
           )}
 
           {/* 备用问候语 */}
-          {characterData.alternateGreetings && characterData.alternateGreetings.length > 0 && (
+          {(isEditing || (characterData.alternateGreetings && characterData.alternateGreetings.length > 0)) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold">备用问候语</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <GitBranch className="h-5 w-5" />
+                  备用问候语
+                </h3>
               </div>
               <div className="p-4 space-y-3">
-                {characterData.alternateGreetings.map((greeting, index) => (
-                  <div key={index} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-md">
-                    <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{greeting}</p>
+                {isEditing ? (
+                  <div>
+                    <textarea
+                      value={(displayData.alternateGreetings || []).join('\n---\n')}
+                      onChange={(e) => updateEditData('alternateGreetings', e.target.value.split('\n---\n').filter(g => g.trim()))}
+                      className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical"
+                      placeholder="输入备用问候语，用 ---（三个短横线）分隔多个问候语"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">使用 --- 分隔多个问候语</p>
                   </div>
-                ))}
+                ) : (
+                  characterData.alternateGreetings && characterData.alternateGreetings.map((greeting, index) => (
+                    <div key={index} className="p-3 bg-gray-100 dark:bg-gray-700 rounded-md">
+                      <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{greeting}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
 
           {/* 系统提示 */}
-          {characterData.systemPrompt && (
+          {(isEditing || characterData.systemPrompt) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -556,24 +629,286 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
                 </h3>
               </div>
               <div className="p-4">
-                <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere font-mono text-sm bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
-                  {characterData.systemPrompt}
-                </p>
+                {isEditing ? (
+                  <textarea
+                    value={displayData.systemPrompt || ''}
+                    onChange={(e) => updateEditData('systemPrompt', e.target.value)}
+                    className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical font-mono text-sm"
+                    placeholder="输入系统提示"
+                  />
+                ) : (
+                  <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere font-mono text-sm bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                    {characterData.systemPrompt}
+                  </p>
+                )}
               </div>
             </div>
           )}
 
           {/* 创作者备注 */}
-          {characterData.creatorNotes && (
+          {(isEditing || characterData.creatorNotes || characterData.creator_notes) && (
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold">创作者备注</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Puzzle className="h-5 w-5" />
+                  创作者备注
+                </h3>
               </div>
               <div className="p-4">
-                <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{characterData.creatorNotes}</p>
+                {isEditing ? (
+                  <textarea
+                    value={displayData.creatorNotes || displayData.creator_notes || ''}
+                    onChange={(e) => updateEditData('creator_notes', e.target.value)}
+                    className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical"
+                    placeholder="输入创作者备注"
+                  />
+                ) : (
+                  <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{characterData.creatorNotes || characterData.creator_notes}</p>
+                )}
               </div>
             </div>
           )}
+
+          {/* 历史指令 */}
+           {(isEditing || characterData.post_history_instructions) && (
+             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                 <h3 className="text-lg font-semibold flex items-center gap-2">
+                   <History className="h-5 w-5" />
+                   历史指令
+                 </h3>
+               </div>
+               <div className="p-4">
+                 {isEditing ? (
+                   <textarea
+                     value={displayData.post_history_instructions || ''}
+                     onChange={(e) => updateEditData('post_history_instructions', e.target.value)}
+                     className="w-full h-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-vertical font-mono text-sm"
+                     placeholder="输入历史指令"
+                   />
+                 ) : (
+                   <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere font-mono text-sm bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                     {characterData.post_history_instructions}
+                   </p>
+                 )}
+               </div>
+             </div>
+           )}
+
+           {/* 世界书 */}
+           {(isEditing || (characterData.character_book && characterData.character_book.entries && characterData.character_book.entries.length > 0)) && (
+             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                 <h3 className="text-lg font-semibold flex items-center gap-2">
+                   <BookOpen className="h-5 w-5" />
+                   世界书 (Character Book)
+                 </h3>
+               </div>
+               <div className="p-4 space-y-4">
+                 {/* 世界书基本设置 */}
+                 {isEditing && (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                     <div>
+                       <label className="text-sm font-medium text-muted-foreground">世界书名称</label>
+                       <input
+                         type="text"
+                         value={displayData.character_book?.name || ''}
+                         onChange={(e) => updateEditData('character_book', {
+                           ...displayData.character_book,
+                           name: e.target.value
+                         })}
+                         className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                         placeholder="输入世界书名称"
+                       />
+                     </div>
+                     <div>
+                       <label className="text-sm font-medium text-muted-foreground">扫描深度</label>
+                       <input
+                         type="number"
+                         value={displayData.character_book?.scan_depth || 100}
+                         onChange={(e) => updateEditData('character_book', {
+                           ...displayData.character_book,
+                           scan_depth: parseInt(e.target.value) || 100
+                         })}
+                         className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                         placeholder="100"
+                       />
+                     </div>
+                     <div>
+                       <label className="text-sm font-medium text-muted-foreground">Token预算</label>
+                       <input
+                         type="number"
+                         value={displayData.character_book?.token_budget || 500}
+                         onChange={(e) => updateEditData('character_book', {
+                           ...displayData.character_book,
+                           token_budget: parseInt(e.target.value) || 500
+                         })}
+                         className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                         placeholder="500"
+                       />
+                     </div>
+                     <div className="flex items-center">
+                       <label className="flex items-center">
+                         <input
+                           type="checkbox"
+                           checked={displayData.character_book?.recursive_scanning || false}
+                           onChange={(e) => updateEditData('character_book', {
+                             ...displayData.character_book,
+                             recursive_scanning: e.target.checked
+                           })}
+                           className="mr-2"
+                         />
+                         <span className="text-sm font-medium text-muted-foreground">递归扫描</span>
+                       </label>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* 世界书条目 */}
+                 <div className="space-y-3">
+                   {(displayData.character_book?.entries || []).map((entry, index) => (
+                     <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                       {isEditing ? (
+                         <div className="space-y-3">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                             <div>
+                               <label className="text-sm font-medium text-muted-foreground">关键词</label>
+                               <input
+                                 type="text"
+                                 value={(entry.keys || []).join(', ')}
+                                 onChange={(e) => {
+                                   const newEntries = [...(displayData.character_book?.entries || [])];
+                                   newEntries[index] = {
+                                     ...entry,
+                                     keys: e.target.value.split(',').map(k => k.trim()).filter(k => k)
+                                   };
+                                   updateEditData('character_book', {
+                                     ...displayData.character_book,
+                                     entries: newEntries
+                                   });
+                                 }}
+                                 className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                 placeholder="输入关键词，用逗号分隔"
+                               />
+                             </div>
+                             <div>
+                               <label className="text-sm font-medium text-muted-foreground">插入顺序</label>
+                               <input
+                                 type="number"
+                                 value={entry.insertion_order || 0}
+                                 onChange={(e) => {
+                                   const newEntries = [...(displayData.character_book?.entries || [])];
+                                   newEntries[index] = {
+                                     ...entry,
+                                     insertion_order: parseInt(e.target.value) || 0
+                                   };
+                                   updateEditData('character_book', {
+                                     ...displayData.character_book,
+                                     entries: newEntries
+                                   });
+                                 }}
+                                 className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                               />
+                             </div>
+                           </div>
+                           <div>
+                             <label className="text-sm font-medium text-muted-foreground">内容</label>
+                             <textarea
+                               value={entry.content || ''}
+                               onChange={(e) => {
+                                 const newEntries = [...(displayData.character_book?.entries || [])];
+                                 newEntries[index] = {
+                                   ...entry,
+                                   content: e.target.value
+                                 };
+                                 updateEditData('character_book', {
+                                   ...displayData.character_book,
+                                   entries: newEntries
+                                 });
+                               }}
+                               className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 min-h-[80px]"
+                               placeholder="输入条目内容"
+                             />
+                           </div>
+                           <div className="flex items-center justify-between">
+                             <label className="flex items-center">
+                               <input
+                                 type="checkbox"
+                                 checked={entry.enabled !== false}
+                                 onChange={(e) => {
+                                   const newEntries = [...(displayData.character_book?.entries || [])];
+                                   newEntries[index] = {
+                                     ...entry,
+                                     enabled: e.target.checked
+                                   };
+                                   updateEditData('character_book', {
+                                     ...displayData.character_book,
+                                     entries: newEntries
+                                   });
+                                 }}
+                                 className="mr-2"
+                               />
+                               <span className="text-sm font-medium text-muted-foreground">启用</span>
+                             </label>
+                             <button
+                               onClick={() => {
+                                 const newEntries = [...(displayData.character_book?.entries || [])];
+                                 newEntries.splice(index, 1);
+                                 updateEditData('character_book', {
+                                   ...displayData.character_book,
+                                   entries: newEntries
+                                 });
+                               }}
+                               className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                             >
+                               删除
+                             </button>
+                           </div>
+                         </div>
+                       ) : (
+                         <div>
+                           <div className="flex items-center justify-between mb-2">
+                             <div className="flex flex-wrap gap-1">
+                               {(entry.keys || []).map((key, keyIndex) => (
+                                 <span key={keyIndex} className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded">
+                                   {key}
+                                 </span>
+                               ))}
+                             </div>
+                             <span className={`px-2 py-1 text-xs rounded ${entry.enabled !== false ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}>
+                               {entry.enabled !== false ? '启用' : '禁用'}
+                             </span>
+                           </div>
+                           <p className="whitespace-pre-wrap text-sm">{entry.content}</p>
+                         </div>
+                       )}
+                     </div>
+                   ))}
+                   
+                   {isEditing && (
+                     <button
+                       onClick={() => {
+                         const newEntry = {
+                           keys: [],
+                           content: '',
+                           enabled: true,
+                           insertion_order: (displayData.character_book?.entries?.length || 0),
+                           extensions: {}
+                         };
+                         updateEditData('character_book', {
+                           ...displayData.character_book,
+                           entries: [...(displayData.character_book?.entries || []), newEntry]
+                         });
+                       }}
+                       className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+                     >
+                       + 添加新条目
+                     </button>
+                   )}
+                 </div>
+               </div>
+             </div>
+           )}
 
           {/* 标签 */}
           {characterData.tags && characterData.tags.length > 0 && (

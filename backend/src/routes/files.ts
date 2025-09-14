@@ -714,7 +714,7 @@ router.post('/upload', upload.array('files'), async (req, res) => {
        while (await fs.pathExists(fullPath)) {
          const newFileName = `${fileNameWithoutExt}(${counter})${fileExtension}`;
          relativePath = path.join(targetPath, fileDir, newFileName);
-         fullPath = path.join(project.path, relativePath);
+         fullPath = path.join(projectAbsolutePath, relativePath);
          counter++;
        }
        
