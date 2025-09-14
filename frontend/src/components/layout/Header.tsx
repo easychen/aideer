@@ -1,9 +1,11 @@
-import { Plus, Settings, ChevronRight, Home } from 'lucide-react';
+import { Plus, Settings, ChevronRight, Home, Edit2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { usePathContext } from '../../contexts/PathContext';
 import ImportDialog from '../dialogs/ImportDialog';
 import SettingsDialog from '../dialogs/SettingsDialog';
+import EditFolderDialog from '../dialogs/EditFolderDialog';
+import DeleteFolderDialog from '../dialogs/DeleteFolderDialog';
 
 interface HeaderProps {
   currentPath?: string;
@@ -14,6 +16,9 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
   const { currentProject } = useProjectStore();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isHoveringBreadcrumb, setIsHoveringBreadcrumb] = useState(false);
+  const [isEditFolderDialogOpen, setIsEditFolderDialogOpen] = useState(false);
+  const [isDeleteFolderDialogOpen, setIsDeleteFolderDialogOpen] = useState(false);
   const { setCurrentPath } = usePathContext();
 
   const handleImportClick = () => {
@@ -52,10 +57,44 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
   
   const breadcrumbSegments = getBreadcrumbPath();
   
+  const handleEditDirectory = () => {
+    setIsEditFolderDialogOpen(true);
+  };
+
+  const handleFolderRenamed = (newPath?: string) => {
+    setIsEditFolderDialogOpen(false);
+    // 如果提供了新路径，更新当前路径
+    if (newPath) {
+      setCurrentPath(newPath);
+    }
+    onImportComplete?.(); // 触发刷新
+  };
+
+  const handleDeleteDirectory = () => {
+    setIsDeleteFolderDialogOpen(true);
+  };
+
+  const handleFolderDeleted = () => {
+    setIsDeleteFolderDialogOpen(false);
+    // 删除后返回上级目录
+    const pathSegments = currentPath.split('/').filter(Boolean);
+    if (pathSegments.length > 1) {
+      pathSegments.pop();
+      setCurrentPath(pathSegments.join('/'));
+    } else {
+      setCurrentPath('');
+    }
+    onImportComplete?.(); // 触发刷新
+  };
+
   return (
     <div className="h-14 bg-card border-b border-border px-4 flex items-center justify-between">
       {/* 面包屑导航 */}
-      <div className="flex items-center space-x-1">
+      <div 
+        className="flex items-center space-x-1"
+        onMouseEnter={() => setIsHoveringBreadcrumb(true)}
+        onMouseLeave={() => setIsHoveringBreadcrumb(false)}
+      >
         <button 
           className="flex items-center space-x-1 px-2 py-1 hover:bg-muted/50 rounded transition-colors"
           onClick={() => setCurrentPath('')}
@@ -77,6 +116,26 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
             </button>
           </div>
         ))}
+        
+        {/* 编辑和删除按钮 - 仅在hover时显示且有路径时显示 */}
+        {isHoveringBreadcrumb && currentPath && (
+          <div className="flex items-center space-x-1 ml-2">
+            <button
+              onClick={handleEditDirectory}
+              className="p-1 hover:bg-muted/50 rounded transition-colors"
+              title="编辑目录名称"
+            >
+              <Edit2 className="w-3 h-3 text-muted-foreground" />
+            </button>
+            <button
+              onClick={handleDeleteDirectory}
+              className="p-1 hover:bg-muted/50 rounded transition-colors"
+              title="删除目录"
+            >
+              <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+            </button>
+          </div>
+        )}
       </div>
       
       {/* 中间：空白区域 */}
@@ -117,6 +176,24 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
         isOpen={isSettingsDialogOpen}
         onClose={handleSettingsClose}
       />
+      
+      {/* 编辑目录对话框 */}
+       <EditFolderDialog
+         isOpen={isEditFolderDialogOpen}
+         onClose={() => setIsEditFolderDialogOpen(false)}
+         projectId={currentProject?.id || 0}
+         currentPath={currentPath}
+         onFolderRenamed={handleFolderRenamed}
+       />
+       
+       {/* 删除目录对话框 */}
+       <DeleteFolderDialog
+         isOpen={isDeleteFolderDialogOpen}
+         onClose={() => setIsDeleteFolderDialogOpen(false)}
+         projectId={currentProject?.id || 0}
+         currentPath={currentPath}
+         onFolderDeleted={handleFolderDeleted}
+       />
     </div>
   );
 };

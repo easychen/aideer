@@ -1,6 +1,7 @@
-import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal, ListTree, FolderTree } from 'lucide-react';
+import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal, FolderOpen, FolderPlus, FolderTree, ListTree } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
+import CreateFolderDialog from '../dialogs/CreateFolderDialog';
 import { apiService } from '../../services/api';
 import { DirectoryNode, FileItem, Project } from '../../types/index';
 import { usePathContext } from '../../contexts/PathContext';
@@ -286,7 +287,13 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
     const saved = localStorage.getItem('sidebar-show-files-only');
     return saved ? JSON.parse(saved) : true;
   });
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
+  
+  const handleFolderCreated = () => {
+    // 刷新文件树
+    handleRefresh();
+  };
   
   const handleRefresh = () => {
     // 如果有父组件的刷新回调，优先使用它来触发全局刷新
@@ -418,6 +425,14 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
             >
               <RefreshCw className="w-4 h-4 text-muted-foreground" />
             </button>
+            <button 
+              className="p-2 hover:bg-muted/50 rounded-md transition-colors"
+              title="新建目录"
+              onClick={() => setShowCreateFolderDialog(true)}
+              disabled={!currentProject}
+            >
+              <FolderPlus className="w-4 h-4 text-muted-foreground" />
+            </button>
           </div>
           <button 
             className="p-2 hover:bg-muted/50 rounded-md transition-colors"
@@ -446,6 +461,14 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
            project={editingProject}
          />
        )}
+       
+       {/* 新建目录对话框 */}
+       <CreateFolderDialog
+         isOpen={showCreateFolderDialog}
+         onClose={() => setShowCreateFolderDialog(false)}
+         projectId={currentProject?.id || 0}
+         onFolderCreated={handleFolderCreated}
+       />
     </div>
   );
 };

@@ -116,6 +116,33 @@ class ApiService {
     return response.data.data || response.data;
   }
 
+  async createDirectory(projectId: number, path: string): Promise<{ success: boolean; message?: string }> {
+    const response = await this.client.post<ApiResponse<{ success: boolean; message?: string }>>('/directories', {
+      projectId,
+      path
+    });
+    return response.data.data || response.data;
+  }
+
+  async renameDirectory(projectId: number, oldPath: string, newPath: string): Promise<{ success: boolean; message?: string }> {
+    const response = await this.client.put<ApiResponse<{ success: boolean; message?: string }>>('/directories/rename', {
+      projectId,
+      oldPath,
+      newPath
+    });
+    return response.data.data || response.data;
+  }
+
+  async deleteDirectory(projectId: number, path: string): Promise<{ success: boolean; message?: string }> {
+    const response = await this.client.delete<ApiResponse<{ success: boolean; message?: string }>>('/directories', {
+      data: {
+        projectId,
+        path
+      }
+    });
+    return response.data.data || response.data;
+  }
+
   async searchFiles(query: string, projectId?: number, directory?: string, extensions?: string[]): Promise<{ query: string; directory: string; results: FileItem[] }> {
     const response = await this.client.get<ApiResponse<{ query: string; directory: string; results: FileItem[] }>>('/files/search', {
       params: {
