@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Eye, MoreVertical, FileText, Grid3X3, List, Minus, Plus } from 'lucide-react';
+import { Download, Eye, MoreVertical, FileText, Grid3X3, List, Minus, Plus, Image, Film } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
@@ -128,6 +128,12 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
     const saved = localStorage.getItem('fileGrid-sortOrder');
     return (saved as 'asc' | 'desc') || 'desc';
+  });
+  
+  // 文件类型过滤设置，默认只显示媒体文件
+  const [filterMode, setFilterMode] = useState<'all' | 'media'>(() => {
+    const saved = localStorage.getItem('fileGrid-filterMode');
+    return (saved as 'all' | 'media') || 'media';
   });
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renamingFile, setRenamingFile] = useState<FileItem | null>(null);
@@ -273,7 +279,26 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
     action();
   };
 
-  const sortedFiles = [...files].sort((a, b) => {
+  // 媒体文件类型判断
+  const isMediaFile = (file: FileItem) => {
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const mediaExtensions = [
+      // 图片
+      'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif',
+      // 视频
+      'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v', '3gp', 'ogv',
+      // 音频
+      'mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a', 'opus'
+    ];
+    return mediaExtensions.includes(extension);
+  };
+
+  // 过滤和排序文件
+  const filteredFiles = filterMode === 'media' 
+    ? files.filter(isMediaFile)
+    : files;
+
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
     let comparison = 0;
     
     switch (sortBy) {
@@ -356,6 +381,34 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                 title="列表视图"
               >
                 <List className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* 文件类型过滤 */}
+            <div className="flex items-center space-x-1 border border-border rounded-md p-1">
+              <button
+                onClick={() => {
+                  setFilterMode('media');
+                  localStorage.setItem('fileGrid-filterMode', 'media');
+                }}
+                className={`p-1 rounded transition-colors ${
+                  filterMode === 'media' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="只显示媒体文件"
+              >
+                <Image className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  setFilterMode('all');
+                  localStorage.setItem('fileGrid-filterMode', 'all');
+                }}
+                className={`p-1 rounded transition-colors ${
+                  filterMode === 'all' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="显示全部文件"
+              >
+                <FileText className="w-4 h-4" />
               </button>
             </div>
             

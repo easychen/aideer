@@ -216,8 +216,8 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
       
       case 'audio':
         return (
-          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2 group border border-border">
-            <Music className="w-8 h-8 text-blue-500 mb-4" />
+          <div className="w-full aspect-square bg-gradient-to-b from-black to-slate-400 rounded-lg flex flex-col items-center justify-center p-2 group border border-border">
+            <Music className="w-8 h-8 text-white mb-4" />
             <audio 
               controls 
               className="w-full max-w-[150px] h-8"
