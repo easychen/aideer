@@ -1,4 +1,4 @@
-import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal, ListTree, FolderTree } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { apiService } from '../../services/api';
@@ -17,7 +17,7 @@ interface FileNode {
   children?: FileNode[];
 }
 
-const FileTreeItem = ({ node, level = 0, projectId, onFileClick }: { node: FileNode; level?: number; projectId: number; onFileClick?: (file: FileItem) => void }) => {
+const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false, onFileClick }: { node: FileNode; level?: number; projectId: number; showDirectoriesOnly?: boolean; onFileClick?: (file: FileItem) => void }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [children, setChildren] = useState<FileNode[]>(node.children || []);
   const [loading, setLoading] = useState(false);
@@ -26,32 +26,9 @@ const FileTreeItem = ({ node, level = 0, projectId, onFileClick }: { node: FileN
   
   const hasChildren = node.type === 'folder' && (children.length > 0 || !hasLoadedChildren);
   
-  const handleClick = async () => {
-    if (node.type === 'file') {
-      // 处理文件点击 - 打开详情浮层
-      if (onFileClick) {
-        // 构造FileItem对象
-        const fileItem: FileItem = {
-            id: node.id,
-            projectId: projectId,
-            name: node.name,
-            path: node.path,
-            relativePath: node.path,
-            type: 'file',
-            size: 0, // 这里需要从API获取，暂时设为0
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            lastModified: new Date().toISOString(),
-            thumbnailPath: undefined
-          };
-        onFileClick(fileItem);
-      }
-      return;
-    }
-    
-    // 处理文件夹点击
-    setCurrentPath(node.path);
-    
+  const handleToggle = async () => {
+    if (node.type !== 'folder') return;
+
     if (!isExpanded && !hasLoadedChildren) {
       setLoading(true);
       try {
@@ -70,23 +47,57 @@ const FileTreeItem = ({ node, level = 0, projectId, onFileClick }: { node: FileN
         setLoading(false);
       }
     }
-    
+
     setIsExpanded(!isExpanded);
   };
+  
+  const handleSelect = () => {
+    if (node.type === 'file') {
+      if (onFileClick) {
+        const fileItem: FileItem = {
+          id: node.id,
+          projectId: projectId,
+          name: node.name,
+          path: node.path,
+          relativePath: node.path,
+          type: 'file',
+          size: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastModified: new Date().toISOString(),
+          thumbnailPath: undefined
+        };
+        onFileClick(fileItem);
+      }
+    } else {
+      // 选中文件夹（不自动展开/收起）
+      setCurrentPath(node.path);
+    }
+  };
+  
+  // 如果是文件且开启了仅显示目录模式，则不渲染
+  if (node.type === 'file' && showDirectoriesOnly) {
+    return null;
+  }
   
   return (
     <div>
       <div 
         className="flex items-center py-1 px-2 hover:bg-muted/50 rounded cursor-pointer transition-colors"
         style={{ paddingLeft: `${level * 16 + 8}px` }}
-        onClick={handleClick}
+        onClick={handleSelect}
       >
         {node.type === 'folder' && hasChildren && (
-          <ChevronRight 
-            className={`w-4 h-4 text-muted-foreground transition-transform mr-1 ${
-              isExpanded ? 'rotate-90' : ''
-            }`} 
-          />
+          <div
+            className="w-4 h-4 mr-1 flex items-center justify-center"
+            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+          >
+            <ChevronRight 
+              className={`w-4 h-4 text-muted-foreground transition-transform ${
+                isExpanded ? 'rotate-90' : ''
+              }`} 
+            />
+          </div>
         )}
         {node.type === 'folder' && !hasChildren && (
           <div className="w-4 h-4 mr-1" />
@@ -95,26 +106,42 @@ const FileTreeItem = ({ node, level = 0, projectId, onFileClick }: { node: FileN
           <div className="w-4 h-4 mr-2 animate-spin">
             <RefreshCw className="w-4 h-4" />
           </div>
-        ) : node.type === 'folder' ? (
-          <Folder className="w-4 h-4 text-muted-foreground mr-2" />
-        ) : (
-          <File className="w-4 h-4 text-muted-foreground mr-2" />
-        )}
-        <span className="text-sm truncate">{node.name}</span>
+        ) : null}
+        <div className="flex items-center">
+          {node.type === 'folder' && !loading ? (
+            <Folder className="w-4 h-4 text-muted-foreground mr-2" />
+          ) : node.type === 'file' ? (
+            <File className="w-4 h-4 text-muted-foreground mr-2" />
+          ) : null}
+          <span className="text-sm truncate">{node.name}</span>
+        </div>
       </div>
       
       {node.type === 'folder' && isExpanded && hasChildren && (
         <div>
-          {children.map((child) => (
-        <FileTreeItem key={child.id} node={child} level={level + 1} projectId={projectId} onFileClick={onFileClick} />
-      ))}
+          {children.map((child) => {
+            // 如果开启仅显示目录模式且子节点是文件，则不渲染
+            if (showDirectoriesOnly && child.type === 'file') {
+              return null;
+            }
+            return (
+              <FileTreeItem 
+                key={child.id} 
+                node={child} 
+                level={level + 1} 
+                projectId={projectId} 
+                showDirectoriesOnly={showDirectoriesOnly}
+                onFileClick={onFileClick} 
+              />
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
 
-const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTrigger?: number }) => {
+const FileTree = ({ projectId, refreshTrigger, showDirectoriesOnly = false }: { projectId: number; refreshTrigger?: number; showDirectoriesOnly?: boolean }) => {
   const [treeData, setTreeData] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -219,6 +246,7 @@ const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTri
           key={node.id} 
           node={node} 
           projectId={projectId} 
+          showDirectoriesOnly={showDirectoriesOnly}
           onFileClick={(file) => {
             setSelectedFile(file);
             setIsDetailModalOpen(true);
@@ -254,6 +282,10 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
   const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [showFilesOnly, setShowFilesOnly] = useState(() => {
+    const saved = localStorage.getItem('sidebar-show-files-only');
+    return saved ? JSON.parse(saved) : true;
+  });
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
   
   const handleRefresh = () => {
@@ -264,6 +296,11 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
       // 否则只刷新文件树
       setInternalRefreshTrigger(prev => prev + 1);
     }
+  };
+
+  const handleToggleShowFiles = (directoriesOnly: boolean) => {
+    setShowFilesOnly(directoriesOnly);
+    localStorage.setItem('sidebar-show-files-only', JSON.stringify(directoriesOnly));
   };
   
   useEffect(() => {
@@ -338,7 +375,11 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
       {/* 文件树 */}
       <div className="flex-1 p-4 overflow-y-auto">
         {currentProject ? (
-          <FileTree projectId={currentProject.id} refreshTrigger={refreshTrigger || internalRefreshTrigger} />
+          <FileTree 
+            projectId={currentProject.id} 
+            refreshTrigger={refreshTrigger || internalRefreshTrigger}
+            showDirectoriesOnly={showFilesOnly}
+          />
         ) : (
           <div className="text-center py-8 text-sm text-muted-foreground">
             请选择一个项目
@@ -350,6 +391,26 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
       <div className="p-4 border-t border-border">
         <div className="flex items-center justify-between">
           <div className="flex space-x-2">
+            <div className="flex items-center space-x-1 border border-border rounded-md p-1">
+              <button 
+                className={`p-1 rounded transition-colors ${
+                  showFilesOnly ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="仅显示目录"
+                onClick={() => handleToggleShowFiles(true)}
+              >
+                <FolderTree className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-1 rounded transition-colors ${
+                  !showFilesOnly ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="显示目录和文件"
+                onClick={() => handleToggleShowFiles(false)}
+              >
+                <ListTree className="w-4 h-4" />
+              </button>
+            </div>
             <button 
               className="p-2 hover:bg-muted/50 rounded-md transition-colors"
               title="刷新文件树"

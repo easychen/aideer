@@ -30,10 +30,7 @@ const TreeNode = ({ node, level, onFileSelect, selectedPath, projectId }: TreeNo
   const hasChildren = isDirectory && (children.length > 0 || !hasLoadedChildren);
 
   const handleToggle = async () => {
-    if (!isDirectory) {
-      onFileSelect?.(node);
-      return;
-    }
+    if (!isDirectory) return;
 
     if (!isExpanded && !hasLoadedChildren) {
       setLoading(true);
@@ -49,9 +46,6 @@ const TreeNode = ({ node, level, onFileSelect, selectedPath, projectId }: TreeNo
     }
 
     setIsExpanded(!isExpanded);
-    if (!isDirectory) {
-      onFileSelect?.(node);
-    }
   };
 
   const handleFileClick = () => {
@@ -60,17 +54,23 @@ const TreeNode = ({ node, level, onFileSelect, selectedPath, projectId }: TreeNo
     }
   };
 
+  const handleDirSelect = () => {
+    if (isDirectory) {
+      onFileSelect?.(node);
+    }
+  };
+
   return (
     <div>
       <div
-        className={`flex items-center py-1 px-2 hover:bg-accent/50 cursor-pointer rounded-sm transition-colors ${
+        className={`flex items-center py-1 px-2 hover:bg-accent/50 rounded-sm transition-colors cursor-pointer ${
           isSelected ? 'bg-accent' : ''
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
-        onClick={handleToggle}
+        onClick={isDirectory ? handleDirSelect : handleFileClick}
       >
         {hasChildren && (
-          <div className="w-4 h-4 flex items-center justify-center mr-1">
+          <div className="w-4 h-4 flex items-center justify-center mr-1" onClick={(e) => { e.stopPropagation(); handleToggle(); }}>
             {loading ? (
               <div className="w-3 h-3 border border-muted-foreground border-t-transparent rounded-full animate-spin" />
             ) : isExpanded ? (
@@ -95,7 +95,7 @@ const TreeNode = ({ node, level, onFileSelect, selectedPath, projectId }: TreeNo
               {getFileIcon(node.name, 16)}
             </div>
           )}
-          <div onClick={handleFileClick} className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
             <ScrollableText 
               text={node.name}
               className="text-sm"
