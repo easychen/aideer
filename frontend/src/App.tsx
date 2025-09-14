@@ -1,5 +1,4 @@
 import { Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
 import Layout from './components/layout/Layout';
 import MainPage from './pages/MainPage';
 import { FileUpdateProvider } from './contexts/FileUpdateContext';

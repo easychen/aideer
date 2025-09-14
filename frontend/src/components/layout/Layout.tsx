@@ -70,7 +70,7 @@ const LayoutContent = () => {
         // 最小化状态：显示浮动按钮
         <>
           <button
-            onClick={(e) => {
+            onClick={() => {
               if (!hasDragged) {
                 handleSidebarToggle();
               }

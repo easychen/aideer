@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Edit2, Trash2, Download, Eye } from 'lucide-react';
 
 interface ContextMenuProps {

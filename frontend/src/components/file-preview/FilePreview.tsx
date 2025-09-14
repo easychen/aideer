@@ -10,9 +10,7 @@ interface FilePreviewProps {
 
 const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
   // 从项目路径中提取项目名称
-  const getProjectName = (projectPath: string): string => {
-    return projectPath.split('/').pop() || '';
-  };
+
 
   // 图片预览状态
   const [isHovering, setIsHovering] = useState(false);

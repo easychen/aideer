@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Eye, Calendar, HardDrive, FileText, Image, Music, Video, File, MessageCircle, Edit, Trash2 } from 'lucide-react';
+import { X, Download, FileText, Image, Music, Video, File, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
@@ -12,7 +12,7 @@ interface FileDetailModalProps {
   onFileUpdated?: () => void; // 文件更新后的回调，用于刷新文件列表
 }
 
-const FileDetailModal = ({ file, isOpen, onClose, projectId, onFileUpdated }: FileDetailModalProps) => {
+const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalProps) => {
   const [leftWidth, setLeftWidth] = useState(30); // 左侧栏宽度百分比
   const [rightWidth, setRightWidth] = useState(25); // 右侧栏宽度百分比
   const [isRenaming, setIsRenaming] = useState(false);
@@ -22,10 +22,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId, onFileUpdated }: Fi
   
   if (!isOpen || !file) return null;
 
-  // 从项目路径中提取项目名称
-  const getProjectName = (projectPath: string): string => {
-    return projectPath.split('/').pop() || '';
-  };
+
 
   const getFileType = (fileName: string): 'image' | 'audio' | 'video' | 'document' | 'other' => {
     const ext = fileName.toLowerCase().split('.').pop() || '';

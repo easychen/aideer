@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Download, Eye, MoreVertical, FileText, Grid3X3, List, Minus, Plus, Image, Film, Search } from 'lucide-react';
+import { FileText, Grid3X3, List, Minus, Plus, Search, Image as ImageIcon } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
-import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
+
 import FilePreview from '../file-preview/FilePreview';
 import ContextMenu from '../context-menu/ContextMenu';
 import { useViewSettings, previewSizeConfig, PreviewSize } from '../../stores/viewSettings';
@@ -15,107 +15,7 @@ interface FileGridProps {
   selectedFileId?: string;
 }
 
-interface FileCardProps {
-  file: FileItem;
-  onSelect?: (file: FileItem) => void;
-  isSelected?: boolean;
-}
 
-const FileCard = ({ file, onSelect, isSelected }: FileCardProps) => {
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  return (
-    <div
-      className={`p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${
-        isSelected ? 'bg-accent border-primary' : ''
-      }`}
-      onClick={() => onSelect?.(file)}
-    >
-      {/* 文件图标和缩略图 */}
-      <div className="flex items-center justify-center mb-3">
-        {file.thumbnailPath ? (
-          <img 
-            src={file.thumbnailPath} 
-            alt={file.name}
-            className="w-16 h-16 object-cover rounded"
-          />
-        ) : (
-          <div className="w-16 h-16 flex items-center justify-center bg-muted rounded">
-            <div className={getFileTypeColor(file.name)}>
-              {getFileIcon(file.name, 32)}
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* 文件信息 */}
-      <div className="space-y-1">
-        <h3 className="font-medium text-sm truncate" title={file.name}>
-          {file.name}
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          {formatFileSize(file.size)}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {formatDate(file.lastModified)}
-        </p>
-      </div>
-      
-      {/* 操作按钮 */}
-      <div className="flex items-center justify-between mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="flex items-center space-x-1">
-          <button 
-            className="p-1 hover:bg-muted rounded transition-colors"
-            title="预览"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: 实现文件预览
-            }}
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-          <button 
-            className="p-1 hover:bg-muted rounded transition-colors"
-            title="下载"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: 实现文件下载
-            }}
-          >
-            <Download className="w-4 h-4" />
-          </button>
-        </div>
-        <button 
-          className="p-1 hover:bg-muted rounded transition-colors"
-          title="更多操作"
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: 实现更多操作菜单
-          }}
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-};
 
 const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }: FileGridProps) => {
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -437,7 +337,7 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                 }`}
                 title="只显示媒体文件"
               >
-                <Image className="w-4 h-4" />
+                <ImageIcon className="w-4 h-4" />
               </button>
               <button
                 onClick={() => {
