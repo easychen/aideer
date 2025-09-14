@@ -3,10 +3,14 @@ import Layout from './components/layout/Layout';
 import MainPage from './pages/MainPage';
 import { FileUpdateProvider } from './contexts/FileUpdateContext';
 import { useTheme } from './hooks/useTheme';
+import { initializePlugins } from './plugins/init';
 
 function App() {
   // 初始化主题
   useTheme();
+  
+  // 初始化插件系统
+  initializePlugins();
   
   return (
     <FileUpdateProvider>

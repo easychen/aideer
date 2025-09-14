@@ -72,14 +72,14 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       label: '删除',
       onClick: onDelete,
       show: !!onDelete,
-      className: 'text-red-600 hover:bg-red-50'
+      className: 'text-destructive hover:bg-destructive hover:text-destructive-foreground'
     }
   ].filter(item => item.show);
 
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[120px]"
+      className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[120px]"
       style={{
         left: position.x,
         top: position.y
@@ -90,7 +90,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         return (
           <button
             key={index}
-            className={`w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors ${
+            className={`w-full flex items-center px-3 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${
               item.className || ''
             }`}
             onClick={() => {

@@ -3,6 +3,7 @@ import { X, Download, FileText, Image, Music, Video, File, MessageCircle, Edit, 
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
+import PluginContainer from '../../plugins/components/PluginContainer';
 
 interface FileDetailModalProps {
   file: FileItem | null;
@@ -371,23 +372,12 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             onMouseDown={(e) => handleMouseDown(e, 'left')}
           />
           
-          {/* 中间栏 */}
+          {/* 中间栏 - 插件系统 */}
           <div className="flex-1 flex flex-col border-r border-border">
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center space-x-2">
-                <Edit className="w-4 h-4" />
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  编辑器
-                </h3>
-              </div>
-            </div>
-            <div className="flex-1 p-4 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <Edit className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>文件编辑器组件</p>
-                <p className="text-sm mt-1">即将推出</p>
-              </div>
-            </div>
+            <PluginContainer
+              file={file}
+              projectId={projectId}
+            />
           </div>
           
           {/* 右侧拖拽条 */}

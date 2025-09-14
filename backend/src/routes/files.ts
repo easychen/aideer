@@ -99,74 +99,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 获取文件内容
-router.get('/:id/content', async (req, res) => {
-  try {
-    const fileId = req.params.id;
-    const { projectId } = req.query;
-    
-    if (!projectId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Project ID is required'
-      } as ApiResponse);
-    }
-    
-    // 获取项目信息
-    const projects = await dbService.getProjects();
-    const project = projects.find(p => p.id === parseInt(projectId.toString()));
-    
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        error: 'Project not found'
-      } as ApiResponse);
-    }
-    
-    // 扫描项目文件并查找匹配的文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
-    const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
-    
-    if (!file) {
-      return res.status(404).json({
-        success: false,
-        error: 'File not found'
-      } as ApiResponse);
-    }
-    
-    if (file.type === 'directory') {
-      return res.status(400).json({
-        success: false,
-        error: 'Cannot read content of a directory'
-      } as ApiResponse);
-    }
-    
-    const content = await fsService.readFile(file.path);
-    
-    // 设置响应头
-    const mimeType = file.mimeType || 'text/plain';
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    
-    return res.json({
-      success: true,
-      data: {
-        file: { ...file, id: fileId },
-        content: content
-      },
-      message: 'File content retrieved successfully'
-    } as ApiResponse);
-  } catch (error) {
-    console.error('Error reading file content:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to read file content'
-    } as ApiResponse);
-  }
-});
+
 
 // 获取单个文件信息
 router.get('/:id', async (req, res) => {
@@ -213,6 +146,187 @@ router.get('/:id', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch file info'
+    } as ApiResponse);
+  }
+});
+
+// 文件内容更新接口
+router.put('/:id/content', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { projectId, content } = req.body;
+    
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID is required'
+      } as ApiResponse);
+    }
+    
+    if (content === undefined || content === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Content is required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件并查找匹配的文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
+    
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found'
+      } as ApiResponse);
+    }
+    
+    if (file.type === 'directory') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot update directory content'
+      } as ApiResponse);
+    }
+    
+    // 根据内容类型处理数据
+    let dataToWrite;
+    if (typeof content === 'string') {
+      // 如果是字符串，直接写入
+      dataToWrite = content;
+    } else if (content.type === 'base64') {
+      // 如果是base64编码的二进制数据
+      dataToWrite = Buffer.from(content.data, 'base64');
+    } else if (content.type === 'buffer') {
+      // 如果是buffer数据
+      dataToWrite = Buffer.from(content.data);
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid content format'
+      } as ApiResponse);
+    }
+    
+    // 写入文件
+    await fs.writeFile(file.path, dataToWrite);
+    
+    // 获取更新后的文件信息
+    const stats = await fs.stat(file.path);
+    const updatedFile = {
+      ...file,
+      id: fileId,
+      size: stats.size,
+      modifiedAt: stats.mtime.toISOString()
+    };
+    
+    return res.json({
+      success: true,
+      data: updatedFile,
+      message: 'File content updated successfully'
+    } as ApiResponse<FileItem>);
+  } catch (error) {
+    console.error('Error updating file content:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update file content'
+    } as ApiResponse);
+  }
+});
+
+// 创建文件接口
+router.post('/', async (req, res) => {
+  try {
+    const { projectId, relativePath, content } = req.body;
+    
+    if (!projectId || !relativePath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID and relative path are required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 构建完整文件路径
+    const fullPath = path.join(project.path, relativePath);
+    
+    // 检查文件是否已存在
+    if (await fs.pathExists(fullPath)) {
+      return res.status(409).json({
+        success: false,
+        error: 'File already exists'
+      } as ApiResponse);
+    }
+    
+    // 确保目录存在
+    await fs.ensureDir(path.dirname(fullPath));
+    
+    // 根据内容类型处理数据
+    let dataToWrite;
+    if (typeof content === 'string') {
+      // 如果是字符串，直接写入
+      dataToWrite = content;
+    } else if (content && content.type === 'base64') {
+      // 如果是base64编码的二进制数据
+      dataToWrite = Buffer.from(content.data, 'base64');
+    } else if (content && content.type === 'buffer') {
+      // 如果是buffer数据
+      dataToWrite = Buffer.from(content.data);
+    } else {
+      // 默认为空文件
+      dataToWrite = '';
+    }
+    
+    // 写入文件
+    await fs.writeFile(fullPath, dataToWrite);
+    
+    // 获取文件信息
+    const stats = await fs.stat(fullPath);
+    const fileId = generateFileId(fullPath);
+    
+    const newFile: FileItem = {
+       id: fileId,
+       name: path.basename(fullPath),
+       path: fullPath,
+       relativePath: relativePath,
+       type: 'file',
+       size: stats.size,
+       lastModified: stats.mtime.toISOString(),
+       createdAt: stats.birthtime.toISOString(),
+       updatedAt: stats.mtime.toISOString(),
+       projectId: project.id,
+       mimeType: mimeTypes.lookup(fullPath) || 'application/octet-stream'
+     };
+    
+    return res.json({
+      success: true,
+      data: newFile,
+      message: 'File created successfully'
+    } as ApiResponse<FileItem>);
+  } catch (error) {
+    console.error('Error creating file:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to create file'
     } as ApiResponse);
   }
 });

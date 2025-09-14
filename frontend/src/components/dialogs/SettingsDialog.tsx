@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { X, Monitor, Sun, Moon, Eye, EyeOff, Info } from 'lucide-react';
+import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle } from 'lucide-react';
 import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useSettings } from '../../hooks/useSettings';
+import { pluginManager } from '../../plugins/manager/PluginManager';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type ActiveTab = 'interface' | 'api' | 'about';
+type ActiveTab = 'interface' | 'api' | 'plugins' | 'about';
 
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('interface');
@@ -81,6 +82,19 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                 }`}
               >
                 API 设置
+              </button>
+              <button
+                onClick={() => setActiveTab('plugins')}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                  activeTab === 'plugins'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-accent'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Puzzle className="w-4 h-4" />
+                  <span>插件管理</span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('about')}
@@ -214,6 +228,60 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                       保存设置
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 插件管理 */}
+            {activeTab === 'plugins' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-base font-medium mb-4">已安装插件</h3>
+                  <div className="space-y-3">
+                    {pluginManager.getAllPlugins().map((plugin) => (
+                      <div key={plugin.metadata.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-primary/10 rounded-md flex items-center justify-center">
+                              <Puzzle className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium">{plugin.metadata.name}</h4>
+                              <p className="text-sm text-muted-foreground">{plugin.metadata.description}</p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className="text-xs text-muted-foreground">版本: {plugin.metadata.version}</span>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <span className="text-xs text-muted-foreground">作者: {plugin.metadata.author}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={plugin.isEnabled}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  pluginManager.enable(plugin.metadata.id);
+                                } else {
+                                  pluginManager.disable(plugin.metadata.id);
+                                }
+                              }}
+                              className="w-4 h-4 text-primary"
+                            />
+                            <span className="text-sm">{plugin.isEnabled ? '已启用' : '已禁用'}</span>
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {pluginManager.getAllPlugins().length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Puzzle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>暂无已安装的插件</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
