@@ -227,20 +227,12 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">AiDeer</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    智能文件管理系统
+                    AI资产管理系统
                   </p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">版本:</span>
                       <span>1.0.0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">构建时间:</span>
-                      <span>{new Date().toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">技术栈:</span>
-                      <span>React + TypeScript + Electron</span>
                     </div>
                   </div>
                 </div>
