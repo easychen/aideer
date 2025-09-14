@@ -289,6 +289,7 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
   });
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
+  const { currentPath } = usePathContext();
   
   const handleFolderCreated = () => {
     // 刷新文件树
@@ -467,6 +468,7 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
          isOpen={showCreateFolderDialog}
          onClose={() => setShowCreateFolderDialog(false)}
          projectId={currentProject?.id || 0}
+         parentPath={currentPath}
          onFolderCreated={handleFolderCreated}
        />
     </div>

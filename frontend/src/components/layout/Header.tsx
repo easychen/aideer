@@ -135,17 +135,21 @@ const Header = ({
             <span className="text-sm text-muted-foreground ml-1">{currentProject.name}</span>
           )}
         </button>
-        {breadcrumbSegments.map((segment, index) => (
-          <div key={index} className="flex items-center space-x-1">
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            <button 
-              className="px-2 py-1 text-sm hover:bg-muted/50 rounded transition-colors"
-              title={`导航到 ${breadcrumbSegments.slice(0, index + 1).join('/')}`}
-            >
-              {segment}
-            </button>
-          </div>
-        ))}
+        {breadcrumbSegments.map((segment, index) => {
+          const targetPath = breadcrumbSegments.slice(0, index + 1).join('/');
+          return (
+            <div key={index} className="flex items-center space-x-1">
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <button 
+                className="px-2 py-1 text-sm hover:bg-muted/50 rounded transition-colors"
+                onClick={() => setCurrentPath(targetPath)}
+                title={`导航到 ${targetPath}`}
+              >
+                {segment}
+              </button>
+            </div>
+          );
+        })}
         
         {/* 编辑和删除按钮 - 仅在hover时显示且有路径时显示 */}
         {isHoveringBreadcrumb && currentPath && (

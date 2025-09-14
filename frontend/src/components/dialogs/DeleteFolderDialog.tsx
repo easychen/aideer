@@ -97,7 +97,7 @@ const DeleteFolderDialog = ({ isOpen, onClose, projectId, currentPath, onFolderD
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="输入 delete"
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                className="w-full px-3 py-2 border border-border dark:bg-muted/50 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
               />
             </div>
           </div>

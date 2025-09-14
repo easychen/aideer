@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { apiService } from '../../services/api';
+import DirectorySelector from '../ui/DirectorySelector';
 
 interface CreateFolderDialogProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface CreateFolderDialogProps {
 
 const CreateFolderDialog = ({ isOpen, onClose, projectId, parentPath = '', onFolderCreated }: CreateFolderDialogProps) => {
   const [folderName, setFolderName] = useState('');
+  const [selectedParentPath, setSelectedParentPath] = useState(parentPath);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +29,7 @@ const CreateFolderDialog = ({ isOpen, onClose, projectId, parentPath = '', onFol
       setError(null);
       
       // 构建完整路径
-      const fullPath = parentPath ? `${parentPath}/${folderName.trim()}` : folderName.trim();
+      const fullPath = selectedParentPath ? `${selectedParentPath}/${folderName.trim()}` : folderName.trim();
       
       // 调用API创建目录
       await apiService.createDirectory(projectId, fullPath);
@@ -46,6 +48,7 @@ const CreateFolderDialog = ({ isOpen, onClose, projectId, parentPath = '', onFol
 
   const handleClose = () => {
     setFolderName('');
+    setSelectedParentPath(parentPath);
     setError(null);
     onClose();
   };
@@ -66,6 +69,13 @@ const CreateFolderDialog = ({ isOpen, onClose, projectId, parentPath = '', onFol
         </div>
         
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* 目录选择器 */}
+          <DirectorySelector
+            projectId={projectId}
+            selectedPath={selectedParentPath}
+            onPathChange={setSelectedParentPath}
+          />
+          
           <div>
             <label htmlFor="folderName" className="block text-sm font-medium mb-2">
               目录名称
@@ -79,9 +89,9 @@ const CreateFolderDialog = ({ isOpen, onClose, projectId, parentPath = '', onFol
               className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               autoFocus
             />
-            {parentPath && (
+            {selectedParentPath && (
               <p className="text-xs text-muted-foreground mt-1">
-                将在 {parentPath} 下创建
+                将在 {selectedParentPath} 下创建
               </p>
             )}
           </div>
