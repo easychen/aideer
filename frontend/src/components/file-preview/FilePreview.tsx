@@ -205,7 +205,7 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
                 target.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="hidden absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="hidden absolute inset-0 items-center justify-center bg-muted">
               <Image className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />

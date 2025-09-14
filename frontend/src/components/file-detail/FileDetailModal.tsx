@@ -94,7 +94,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
                 target.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="hidden flex items-center justify-center h-full bg-muted">
+            <div className="hidden items-center justify-center h-full bg-muted">
               <Image className="w-12 h-12 text-muted-foreground" />
               <span className="ml-2 text-muted-foreground">无法加载图片</span>
             </div>
