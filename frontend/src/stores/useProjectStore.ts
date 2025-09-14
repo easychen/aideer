@@ -1,7 +1,36 @@
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { Project } from '../types/index';
 import { apiService } from '../services/api';
+
+// 本地存储键名
+const CURRENT_PROJECT_KEY = 'aideer-current-project-id';
+
+// 本地存储工具函数
+const storage = {
+  getItem: (name: string) => {
+    try {
+      const item = localStorage.getItem(name);
+      return item ? JSON.parse(item) : null;
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name: string, value: any) => {
+    try {
+      localStorage.setItem(name, JSON.stringify(value));
+    } catch {
+      // 忽略存储错误
+    }
+  },
+  removeItem: (name: string) => {
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      // 忽略删除错误
+    }
+  }
+};
 
 interface ProjectState {
   // 状态
@@ -35,10 +64,25 @@ export const useProjectStore = create<ProjectState>()(devtools(
         const projects = await apiService.getProjects();
         const { currentProject } = get();
         
-        // 如果没有当前项目且有项目列表，设置第一个为当前项目
+        // 尝试从本地存储恢复当前项目
+        const savedProjectId = storage.getItem(CURRENT_PROJECT_KEY);
         let newCurrentProject = currentProject;
-        if (!currentProject && projects.length > 0) {
+        
+        if (savedProjectId && projects.length > 0) {
+          // 查找保存的项目是否还存在
+          const savedProject = projects.find(p => p.id === savedProjectId);
+          if (savedProject) {
+            newCurrentProject = savedProject;
+          } else {
+            // 如果保存的项目不存在，清除本地存储并使用第一个项目
+            storage.removeItem(CURRENT_PROJECT_KEY);
+            newCurrentProject = projects[0];
+            storage.setItem(CURRENT_PROJECT_KEY, projects[0].id);
+          }
+        } else if (!currentProject && projects.length > 0) {
+          // 如果没有当前项目且有项目列表，设置第一个为当前项目
           newCurrentProject = projects[0];
+          storage.setItem(CURRENT_PROJECT_KEY, projects[0].id);
         }
         
         set({ 
@@ -108,11 +152,27 @@ export const useProjectStore = create<ProjectState>()(devtools(
       set({ loading: true, error: null });
       try {
         await apiService.deleteProject(id);
-        set(state => ({
-          projects: state.projects.filter(p => p.id !== id),
-          currentProject: state.currentProject?.id === id ? null : state.currentProject,
+        const { currentProject, projects } = get();
+        const remainingProjects = projects.filter(p => p.id !== id);
+        
+        let newCurrentProject = currentProject;
+        if (currentProject?.id === id) {
+          // 如果删除的是当前项目，选择第一个剩余项目或设为null
+          newCurrentProject = remainingProjects.length > 0 ? remainingProjects[0] : null;
+          
+          // 更新本地存储
+          if (newCurrentProject) {
+            storage.setItem(CURRENT_PROJECT_KEY, newCurrentProject.id);
+          } else {
+            storage.removeItem(CURRENT_PROJECT_KEY);
+          }
+        }
+        
+        set({
+          projects: remainingProjects,
+          currentProject: newCurrentProject,
           loading: false
-        }));
+        });
       } catch (error) {
         set({ 
           error: error instanceof Error ? error.message : 'Failed to delete project',
@@ -124,6 +184,12 @@ export const useProjectStore = create<ProjectState>()(devtools(
     // 设置当前项目
     setCurrentProject: (project: Project | null) => {
       set({ currentProject: project });
+      // 持久化到本地存储
+      if (project) {
+        storage.setItem(CURRENT_PROJECT_KEY, project.id);
+      } else {
+        storage.removeItem(CURRENT_PROJECT_KEY);
+      }
     },
     
     // 清除错误

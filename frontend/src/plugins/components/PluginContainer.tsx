@@ -166,7 +166,7 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
     <div className="flex flex-col h-full">
       {/* 插件标签页 */}
       <div className="flex border-b border-border bg-muted/30">
-        <div className="flex space-x-1 p-2">
+        <div className="flex space-x-1 px-2 pt-2">
           {enabledPlugins.map(plugin => (
             <PluginTab
               key={plugin.metadata.id}

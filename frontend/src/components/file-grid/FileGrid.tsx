@@ -7,6 +7,7 @@ import FilePreview from '../file-preview/FilePreview';
 import ContextMenu from '../context-menu/ContextMenu';
 import { useViewSettings, previewSizeConfig, PreviewSize } from '../../stores/viewSettings';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
+import ScrollableText from '../ui/ScrollableText';
 
 interface FileGridProps {
   projectId: number;
@@ -470,7 +471,10 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{file.name}</p>
+                    <ScrollableText 
+                      text={file.name}
+                      className="text-sm font-medium"
+                    />
                     <p className="text-xs text-muted-foreground">
                       {formatFileSize(file.size)} • {new Date(file.lastModified).toLocaleDateString()}
                     </p>

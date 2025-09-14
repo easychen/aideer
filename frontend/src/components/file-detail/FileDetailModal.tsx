@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Download, FileText, Image, Music, Video, File, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
 import PluginContainer from '../../plugins/components/PluginContainer';
+import { pluginManager } from '../../plugins/manager/PluginManager';
 
 interface FileDetailModalProps {
   file: FileItem | null;
@@ -20,6 +21,14 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
   const [newFileName, setNewFileName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { triggerFileUpdate } = useFileUpdate();
+  
+  // 检查是否有可用插件
+  const hasAvailablePlugins = useMemo(() => {
+    if (!file) return false;
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+    const availablePlugins = pluginManager.getPluginsForExtension(fileExtension);
+    return availablePlugins.length > 0;
+  }, [file]);
   
   if (!isOpen || !file) return null;
 
@@ -320,10 +329,10 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
           </div>
         )}
 
-        {/* 三栏布局 */}
+        {/* 动态布局 - 根据插件可用性显示两栏或三栏 */}
         <div className="flex flex-1 overflow-hidden">
           {/* 左侧栏 */}
-          <div className="flex flex-col border-r border-border" style={{ width: `${leftWidth}%` }}>
+          <div className="flex flex-col border-r border-border" style={{ width: hasAvailablePlugins ? `${leftWidth}%` : '50%' }}>
             {/* 预览区域 */}
             <div className="flex-1 p-4 overflow-hidden">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
@@ -366,19 +375,23 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             </div>
           </div>
           
-          {/* 左侧拖拽条 */}
-          <div 
-            className="w-1 bg-border hover:bg-primary cursor-col-resize transition-colors"
-            onMouseDown={(e) => handleMouseDown(e, 'left')}
-          />
-          
-          {/* 中间栏 - 插件系统 */}
-          <div className="flex-1 flex flex-col border-r border-border">
-            <PluginContainer
-              file={file}
-              projectId={projectId}
+          {/* 左侧拖拽条 - 仅在有插件时显示 */}
+          {hasAvailablePlugins && (
+            <div 
+              className="w-1 bg-border hover:bg-primary cursor-col-resize transition-colors"
+              onMouseDown={(e) => handleMouseDown(e, 'left')}
             />
-          </div>
+          )}
+          
+          {/* 中间栏 - 插件系统 - 仅在有插件时显示 */}
+          {hasAvailablePlugins && (
+            <div className="flex-1 flex flex-col border-r border-border">
+              <PluginContainer
+                file={file}
+                projectId={projectId}
+              />
+            </div>
+          )}
           
           {/* 右侧拖拽条 */}
           <div 
@@ -387,7 +400,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
           />
           
           {/* 右侧栏 */}
-          <div className="flex flex-col" style={{ width: `${rightWidth}%` }}>
+          <div className="flex flex-col" style={{ width: hasAvailablePlugins ? `${rightWidth}%` : '50%' }}>
             <div className="p-4 border-b border-border">
               <div className="flex items-center space-x-2">
                 <MessageCircle className="w-4 h-4" />

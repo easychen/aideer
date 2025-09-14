@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { DirectoryNode } from '../../types/index';
 import { apiService } from '../../services/api';
 import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
+import ScrollableText from '../ui/ScrollableText';
 
 interface FileTreeProps {
   projectId: number;
@@ -94,13 +95,12 @@ const TreeNode = ({ node, level, onFileSelect, selectedPath, projectId }: TreeNo
               {getFileIcon(node.name, 16)}
             </div>
           )}
-          <span 
-            className="text-sm truncate" 
-            title={node.name}
-            onClick={handleFileClick}
-          >
-            {node.name}
-          </span>
+          <div onClick={handleFileClick} className="flex-1 min-w-0">
+            <ScrollableText 
+              text={node.name}
+              className="text-sm"
+            />
+          </div>
         </div>
       </div>
       
