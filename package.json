@@ -1,0 +1,45 @@
+{
+  "name": "aideer",
+  "version": "1.0.0",
+  "description": "数字资产管理工具 - Digital Asset Management Tool",
+  "main": "dist/electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "build": "pnpm --filter frontend build && pnpm --filter backend build && pnpm --filter electron build",
+    "build:frontend": "pnpm --filter frontend build",
+    "build:backend": "pnpm --filter backend build",
+    "build:electron": "pnpm --filter electron build",
+    "electron:dev": "pnpm --filter backend build && concurrently \"pnpm --filter backend dev\" \"pnpm --filter electron dev\"",
+    "electron:build": "pnpm build && pnpm --filter electron make",
+    "docker:build": "docker build -t aideer .",
+    "docker:run": "docker run -p 3000:3000 aideer",
+    "install:all": "pnpm install",
+    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules electron/node_modules"
+  },
+  "keywords": [
+    "digital-asset-management",
+    "file-manager",
+    "electron",
+    "react",
+    "express",
+    "sqlite"
+  ],
+  "author": "AiDeer Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/aideer.git"
+  }
+}
