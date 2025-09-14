@@ -2,3 +2,4 @@ node_modules
 dist
 backend/data
 electron/resources
+.DS_Store

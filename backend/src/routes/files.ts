@@ -25,6 +25,14 @@ const upload = multer({
   },
 });
 
+// 配置multer用于单文件更新
+const updateUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB限制
+  },
+});
+
 // 获取项目文件列表
 router.get('/', async (req, res) => {
   try {
@@ -151,6 +159,83 @@ router.get('/:id', async (req, res) => {
 });
 
 // 文件内容更新接口
+// 新的二进制文件更新接口
+router.put('/:id/content/binary', updateUpload.single('file'), async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { projectId } = req.body;
+    const file = req.file;
+    
+    if (!projectId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID is required'
+      } as ApiResponse);
+    }
+    
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        error: 'File is required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件并查找匹配的文件
+    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    const targetFile = scannedFiles.find(f => generateFileId(f.path) === fileId);
+    
+    if (!targetFile) {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found'
+      } as ApiResponse);
+    }
+    
+    if (targetFile.type === 'directory') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot update directory content'
+      } as ApiResponse);
+    }
+    
+    // 直接写入二进制数据
+    await fs.writeFile(targetFile.path, file.buffer);
+    
+    // 获取更新后的文件信息
+    const stats = await fs.stat(targetFile.path);
+    const updatedFile = {
+      ...targetFile,
+      id: fileId,
+      size: stats.size,
+      modifiedAt: stats.mtime.toISOString()
+    };
+    
+    return res.json({
+      success: true,
+      data: updatedFile,
+      message: 'File content updated successfully'
+    } as ApiResponse<FileItem>);
+  } catch (error) {
+    console.error('Error updating file content:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update file content'
+    } as ApiResponse);
+  }
+});
+
+// 原有的 JSON 接口保持兼容性
 router.put('/:id/content', async (req, res) => {
   try {
     const fileId = req.params.id;

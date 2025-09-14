@@ -9,7 +9,7 @@ import {
 } from '../types/index';
 import { pluginRegistry } from '../registry/PluginRegistry';
 import { apiService } from '../../services/api';
-import { Base64 } from 'js-base64';
+// Base64 导入已移除，现在直接使用二进制传输
 
 /**
  * 插件管理器实现
@@ -262,32 +262,32 @@ export class PluginManager implements IPluginManager {
               return false;
             }
             
-            // 准备更新数据
-            let updateData: any;
-            if (content instanceof ArrayBuffer) {
-              // 使用 js-base64 库将 ArrayBuffer 转换为 base64
-              const uint8Array = new Uint8Array(content);
-              const base64String = Base64.fromUint8Array(uint8Array);
-              updateData = {
-                type: 'base64',
-                data: base64String
-              };
-            } else {
-              // 字符串内容
-              updateData = content;
-            }
+            // 根据内容类型选择不同的API
+            let updateResponse: Response;
             
-            // 调用更新API
-            const updateResponse = await fetch(`/api/files/${targetFile.id}/content`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                projectId: pid,
-                content: updateData
-              })
-            });
+            if (content instanceof ArrayBuffer) {
+              // 使用新的二进制接口，直接传输二进制数据
+              const formData = new FormData();
+              formData.append('projectId', pid.toString());
+              formData.append('file', new Blob([content]));
+              
+              updateResponse = await fetch(`/api/files/${targetFile.id}/content/binary`, {
+                method: 'PUT',
+                body: formData
+              });
+            } else {
+              // 字符串内容使用原有的JSON接口
+              updateResponse = await fetch(`/api/files/${targetFile.id}/content`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  projectId: pid,
+                  content: content
+                })
+              });
+            }
             
             if (!updateResponse.ok) {
               console.error('Failed to update file:', await updateResponse.text());
@@ -306,33 +306,34 @@ export class PluginManager implements IPluginManager {
            try {
              const pid = projectId || 4; // 默认使用mybook项目
              
-             // 准备创建数据
-             let createData: any;
-             if (content instanceof ArrayBuffer) {
-               // 使用 js-base64 库将 ArrayBuffer 转换为 base64
-               const uint8Array = new Uint8Array(content);
-               const base64String = Base64.fromUint8Array(uint8Array);
-               createData = {
-                 type: 'base64',
-                 data: base64String
-               };
-             } else {
-               // 字符串内容
-               createData = content;
-             }
+             let createResponse: Response;
              
-             // 调用创建API
-             const createResponse = await fetch('/api/files', {
-               method: 'POST',
-               headers: {
-                 'Content-Type': 'application/json'
-               },
-               body: JSON.stringify({
-                 projectId: pid.toString(),
-                 relativePath: relativePath,
-                 content: createData
-               })
-             });
+             if (content instanceof ArrayBuffer) {
+               // 使用上传接口直接传输二进制数据
+               const formData = new FormData();
+               formData.append('projectId', pid.toString());
+               formData.append('targetPath', '');
+               formData.append('filePaths', JSON.stringify([relativePath]));
+               formData.append('files', new Blob([content]), relativePath.split('/').pop() || 'file');
+               
+               createResponse = await fetch('/api/files/upload', {
+                 method: 'POST',
+                 body: formData
+               });
+             } else {
+               // 字符串内容使用原有的JSON接口
+               createResponse = await fetch('/api/files', {
+                 method: 'POST',
+                 headers: {
+                   'Content-Type': 'application/json'
+                 },
+                 body: JSON.stringify({
+                   projectId: pid.toString(),
+                   relativePath: relativePath,
+                   content: content
+                 })
+               });
+             }
              
              if (!createResponse.ok) {
                console.error('Failed to create file:', await createResponse.text());
