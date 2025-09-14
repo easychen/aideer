@@ -517,6 +517,89 @@ router.put('/:id/rename', async (req, res) => {
   }
 });
 
+// 批量删除文件接口
+router.delete('/batch', async (req, res) => {
+  try {
+    console.log('=== Batch delete request ===');
+    console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
+    console.log('Request body type:', typeof req.body);
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    
+    const { projectId, files } = req.body || {};
+    console.log('Extracted projectId:', projectId, 'type:', typeof projectId);
+    console.log('Extracted files:', files, 'type:', typeof files);
+    
+    if (!projectId || !files || !Array.isArray(files) || files.length === 0) {
+      console.log('Validation failed - projectId:', projectId, 'files:', files);
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID and files array are required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId.toString()));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    const deletedFiles: string[] = [];
+    const errors: string[] = [];
+    
+    // 批量删除文件
+    for (const file of files) {
+      try {
+        const { name, directoryPath } = file;
+        
+        if (!name) {
+          errors.push(`File name is required`);
+          continue;
+        }
+        
+        // 构建完整的文件路径
+        const absoluteProjectPath = PathUtils.getAbsolutePath(project.path);
+        const fullPath = path.join(absoluteProjectPath, directoryPath || '', name);
+        
+        // 检查文件是否存在
+        if (!await fs.pathExists(fullPath)) {
+          errors.push(`File not found: ${name}`);
+          continue;
+        }
+        
+        // 删除文件
+        await fs.remove(fullPath);
+        deletedFiles.push(name);
+        
+      } catch (error) {
+        console.error(`Error deleting file ${file.name}:`, error);
+        errors.push(`Failed to delete ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+    
+    // 返回结果
+    const response = {
+      success: errors.length === 0,
+      deletedFiles,
+      errors: errors.length > 0 ? errors : undefined
+    } as ApiResponse;
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('Batch delete error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete files'
+    } as ApiResponse);
+  }
+});
+
 // 文件删除接口
 router.delete('/:id', async (req, res) => {
   try {
@@ -678,6 +761,129 @@ router.post('/upload', upload.array('files'), async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to upload files'
+    } as ApiResponse);
+  }
+});
+
+// 批量移动文件接口
+router.put('/batch/move', async (req, res) => {
+  try {
+    const { projectId, fileIds, targetPath } = req.body;
+    
+    if (!projectId || !fileIds || !Array.isArray(fileIds) || fileIds.length === 0 || !targetPath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Project ID, file IDs array, and target path are required'
+      } as ApiResponse);
+    }
+    
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    const project = projects.find(p => p.id === parseInt(projectId.toString()));
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 扫描项目文件
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
+    
+    // 验证目标路径是否存在且为目录
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const targetAbsolutePath = path.join(projectAbsolutePath, targetPath);
+    
+    if (!await fs.pathExists(targetAbsolutePath)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Target directory does not exist'
+      } as ApiResponse);
+    }
+    
+    const targetStats = await fs.stat(targetAbsolutePath);
+    if (!targetStats.isDirectory()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Target path is not a directory'
+      } as ApiResponse);
+    }
+    
+    const movedFiles: FileItem[] = [];
+    const errors: string[] = [];
+    
+    // 批量移动文件
+    for (const fileId of fileIds) {
+      try {
+        const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
+        
+        if (!file) {
+          errors.push(`File with ID ${fileId} not found`);
+          continue;
+        }
+        
+        if (file.type === 'directory') {
+          errors.push(`Cannot move directory: ${file.name}`);
+          continue;
+        }
+        
+        // 构建新的文件路径
+        const newPath = path.join(targetAbsolutePath, file.name);
+        const newRelativePath = path.join(targetPath, file.name);
+        
+        // 检查目标位置是否已存在同名文件
+        if (await fs.pathExists(newPath)) {
+          errors.push(`File ${file.name} already exists in target directory`);
+          continue;
+        }
+        
+        // 移动文件
+        await fs.move(file.path, newPath);
+        
+        // 获取移动后的文件信息
+        const fileStats = await fs.stat(newPath);
+        const mimeType = mimeTypes.lookup(newPath) || undefined;
+        
+        const movedFile: FileItem = {
+          id: generateFileId(newPath),
+          projectId: project.id,
+          name: path.basename(newPath),
+          path: newPath,
+          relativePath: newRelativePath,
+          size: fileStats.size,
+          type: 'file',
+          mimeType: mimeType,
+          extension: path.extname(newPath).slice(1) || undefined,
+          createdAt: fileStats.birthtime.toISOString(),
+          updatedAt: fileStats.mtime.toISOString(),
+          lastModified: fileStats.mtime.toISOString(),
+          thumbnailPath: undefined
+        };
+        
+        movedFiles.push(movedFile);
+      } catch (error) {
+        console.error(`Error moving file ${fileId}:`, error);
+        errors.push(`Failed to move file ${fileId}`);
+      }
+    }
+    
+    return res.json({
+      success: true,
+      data: {
+        movedFiles,
+        movedCount: movedFiles.length,
+        errors
+      },
+      message: `Successfully moved ${movedFiles.length} files${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error in batch move:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to move files'
     } as ApiResponse);
   }
 });

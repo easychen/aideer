@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -24,6 +24,13 @@ const LayoutContent = () => {
   const updateAllFiles = (files: string[]) => {
     setAllFiles(files);
   };
+
+  // 监听路径变化，切换目录时清空选中文件
+  useEffect(() => {
+    if (selectedFiles.length > 0) {
+      setSelectedFiles([]);
+    }
+  }, [currentPath]);
 
   const handleImportComplete = () => {
     // 触发刷新，可以通过增加计数器来通知子组件

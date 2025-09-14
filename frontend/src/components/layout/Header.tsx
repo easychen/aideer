@@ -6,6 +6,8 @@ import ImportDialog from '../dialogs/ImportDialog';
 import SettingsDialog from '../dialogs/SettingsDialog';
 import EditFolderDialog from '../dialogs/EditFolderDialog';
 import DeleteFolderDialog from '../dialogs/DeleteFolderDialog';
+import BatchDeleteDialog from '../dialogs/BatchDeleteDialog';
+import BatchMoveDialog from '../dialogs/BatchMoveDialog';
 
 interface HeaderProps {
   currentPath?: string;
@@ -37,6 +39,8 @@ const Header = ({
   const [isEditFolderDialogOpen, setIsEditFolderDialogOpen] = useState(false);
   const [isDeleteFolderDialogOpen, setIsDeleteFolderDialogOpen] = useState(false);
   const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  const [isBatchMoveDialogOpen, setIsBatchMoveDialogOpen] = useState(false);
   const { setCurrentPath } = usePathContext();
 
   const handleImportClick = () => {
@@ -102,6 +106,16 @@ const Header = ({
     } else {
       setCurrentPath('');
     }
+    onImportComplete?.(); // 触发刷新
+  };
+
+  const handleBatchDeleteComplete = () => {
+    setIsBatchDeleteDialogOpen(false);
+    onImportComplete?.(); // 触发刷新
+  };
+
+  const handleBatchMoveComplete = () => {
+    setIsBatchMoveDialogOpen(false);
     onImportComplete?.(); // 触发刷新
   };
 
@@ -200,7 +214,7 @@ const Header = ({
             <div className="relative">
               <button 
                 onClick={() => setIsBatchMenuOpen(!isBatchMenuOpen)}
-                disabled={selectedFiles.length === 0}
+                disabled={selectedFiles.length === 0 || !currentProject}
                 className="h-9 px-3 bg-muted hover:bg-accent rounded-md transition-colors flex items-center space-x-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 title="批量操作"
               >
@@ -212,7 +226,7 @@ const Header = ({
                 <div className="absolute right-0 top-full mt-1 w-32 bg-background border border-border rounded-md shadow-lg z-50">
                   <button
                     onClick={() => {
-                      onBatchDelete?.();
+                      setIsBatchDeleteDialogOpen(true);
                       setIsBatchMenuOpen(false);
                     }}
                     className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors text-destructive hover:text-destructive"
@@ -221,7 +235,7 @@ const Header = ({
                   </button>
                   <button
                     onClick={() => {
-                      onBatchMove?.();
+                      setIsBatchMoveDialogOpen(true);
                       setIsBatchMenuOpen(false);
                     }}
                     className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
@@ -284,7 +298,29 @@ const Header = ({
          currentPath={currentPath}
          onFolderDeleted={handleFolderDeleted}
        />
-    </div>
+       
+       {/* 批量删除对话框 */}
+        {currentProject && (
+          <BatchDeleteDialog
+            isOpen={isBatchDeleteDialogOpen}
+            onClose={() => setIsBatchDeleteDialogOpen(false)}
+            selectedFiles={selectedFiles}
+            projectId={currentProject.id}
+            currentPath={currentPath}
+            onDeleteComplete={handleBatchDeleteComplete}
+          />
+        )}
+       
+       {/* 批量移动对话框 */}
+        {currentProject && (
+          <BatchMoveDialog
+            isOpen={isBatchMoveDialogOpen}
+            onClose={() => setIsBatchMoveDialogOpen(false)}
+            selectedFiles={selectedFiles}
+            projectId={currentProject.id}
+            onMoveComplete={handleBatchMoveComplete}
+          />
+        )}</div>
   );
 };
 

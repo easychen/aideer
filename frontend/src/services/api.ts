@@ -216,6 +216,37 @@ class ApiService {
     }
   }
 
+  // 批量删除文件API
+  async batchDeleteFiles(files: Array<{name: string, directoryPath: string}>, projectId: number): Promise<{ deletedFiles: string[]; deletedCount: number; errors: string[] }> {
+    try {
+      console.log('API batchDeleteFiles - projectId:', projectId, 'files:', files);
+      const requestData = { projectId, files };
+      console.log('Request data:', requestData);
+      const response = await this.client.delete<ApiResponse<{ deletedFiles: string[]; deletedCount: number; errors: string[] }>>('/files/batch', {
+        data: requestData
+      });
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error('Batch delete files error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to delete files');
+    }
+  }
+
+  // 批量移动文件API
+  async batchMoveFiles(fileIds: string[], targetPath: string, projectId: number): Promise<{ movedFiles: FileItem[]; movedCount: number; errors: string[] }> {
+    try {
+      const response = await this.client.put<ApiResponse<{ movedFiles: FileItem[]; movedCount: number; errors: string[] }>>('/files/batch/move', {
+        projectId,
+        fileIds,
+        targetPath
+      });
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error('Batch move files error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to move files');
+    }
+  }
+
   // 健康检查
   async healthCheck(): Promise<{ status: string; timestamp: string; version: string }> {
     const response = await this.client.get<{ status: string; timestamp: string; version: string }>('/health');
