@@ -120,8 +120,15 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'size' | 'modified'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  // 从localStorage读取排序设置，默认按修改时间由新到旧
+  const [sortBy, setSortBy] = useState<'name' | 'size' | 'modified'>(() => {
+    const saved = localStorage.getItem('fileGrid-sortBy');
+    return (saved as 'name' | 'size' | 'modified') || 'modified';
+  });
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
+    const saved = localStorage.getItem('fileGrid-sortOrder');
+    return (saved as 'asc' | 'desc') || 'desc';
+  });
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renamingFile, setRenamingFile] = useState<FileItem | null>(null);
   const [newFileName, setNewFileName] = useState('');
@@ -391,6 +398,9 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
                 const [newSortBy, newSortOrder] = e.target.value.split('-') as [typeof sortBy, typeof sortOrder];
                 setSortBy(newSortBy);
                 setSortOrder(newSortOrder);
+                // 保存到localStorage
+                localStorage.setItem('fileGrid-sortBy', newSortBy);
+                localStorage.setItem('fileGrid-sortOrder', newSortOrder);
               }}
               className="px-3 py-1 text-sm border border-border rounded bg-background"
             >

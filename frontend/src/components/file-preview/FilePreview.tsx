@@ -216,11 +216,17 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
       
       case 'audio':
         return (
-          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2">
-            <Music className="w-6 h-6 text-blue-500 mb-2" />
-            <div className="text-xs text-center text-muted-foreground">
-              音频文件
-            </div>
+          <div className="w-full aspect-square bg-muted rounded-lg flex flex-col items-center justify-center p-2 group border border-border">
+            <Music className="w-8 h-8 text-blue-500 mb-4" />
+            <audio 
+              controls 
+              className="w-full max-w-[150px] h-8"
+              preload="metadata"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <source src={`${apiBaseUrl}/data/mybook/${file.relativePath}`} />
+              您的浏览器不支持音频播放
+            </audio>
           </div>
         );
       

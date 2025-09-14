@@ -219,15 +219,22 @@ const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTri
 
 interface SidebarProps {
   refreshTrigger?: number;
+  onRefresh?: () => void;
 }
 
-const Sidebar = ({ refreshTrigger }: SidebarProps) => {
+const Sidebar = ({ refreshTrigger, onRefresh }: SidebarProps) => {
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
   
   const handleRefresh = () => {
-    setInternalRefreshTrigger(prev => prev + 1);
+    // 如果有父组件的刷新回调，优先使用它来触发全局刷新
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      // 否则只刷新文件树
+      setInternalRefreshTrigger(prev => prev + 1);
+    }
   };
   
   useEffect(() => {

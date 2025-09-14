@@ -13,13 +13,18 @@ const LayoutContent = () => {
     // 触发刷新，可以通过增加计数器来通知子组件
     setRefreshTrigger(prev => prev + 1);
   };
+
+  const handleRefresh = () => {
+    // 处理文件树刷新，同时刷新文件列表
+    setRefreshTrigger(prev => prev + 1);
+  };
   
   return (
     <div className="h-screen bg-background">
       <PanelGroup direction="horizontal" autoSaveId="main-layout">
         {/* 左侧面板 - 侧边栏 */}
         <Panel defaultSize={20} minSize={15} maxSize={40}>
-          <Sidebar refreshTrigger={refreshTrigger} />
+          <Sidebar refreshTrigger={refreshTrigger} onRefresh={handleRefresh} />
         </Panel>
         
         {/* 分割线 */}
