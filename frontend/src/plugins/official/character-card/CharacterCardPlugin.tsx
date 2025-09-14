@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, User, MessageSquare, Settings, Tag, Edit, Save, X, FileText, Plus } from 'lucide-react';
+import { Loader2, User, MessageSquare, Settings, Tag, Edit, Save, X, Plus } from 'lucide-react';
 import { PngProcessor, CharacterData } from './utils/pngProcessor';
 import type { PluginComponentProps } from '../../types';
 

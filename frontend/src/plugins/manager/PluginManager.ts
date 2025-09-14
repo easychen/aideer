@@ -8,8 +8,6 @@ import {
   PluginAPI
 } from '../types/index';
 import { pluginRegistry } from '../registry/PluginRegistry';
-import { apiService } from '../../services/api';
-// Base64 导入已移除，现在直接使用二进制传输
 
 /**
  * 插件管理器实现
@@ -444,21 +442,21 @@ export class PluginManager implements IPluginManager {
     return fileName.substring(lastDotIndex + 1).toLowerCase();
   }
 
-  /**
-   * 持久化插件存储数据
-   * @param pluginId 插件ID
-   */
-  private persistPluginStorage(pluginId: string): void {
-    try {
-      const pluginData = this.pluginStorage.get(pluginId);
-      if (pluginData) {
-        const storageKey = `plugin_storage_${pluginId}`;
-        localStorage.setItem(storageKey, JSON.stringify(pluginData));
-      }
-    } catch (error) {
-      console.warn(`Failed to persist storage for plugin '${pluginId}':`, error);
-    }
-  }
+  // /**
+  //  * 持久化插件存储数据
+  //  * @param pluginId 插件ID
+  //  */
+  // private persistPluginStorage(pluginId: string): void {
+  //   try {
+  //     const pluginData = this.pluginStorage.get(pluginId);
+  //     if (pluginData) {
+  //       const storageKey = `plugin_storage_${pluginId}`;
+  //       localStorage.setItem(storageKey, JSON.stringify(pluginData));
+  //     }
+  //   } catch (error) {
+  //     console.warn(`Failed to persist storage for plugin '${pluginId}':`, error);
+  //   }
+  // }
 
   /**
    * 加载插件存储数据
