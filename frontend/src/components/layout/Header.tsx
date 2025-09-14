@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { usePathContext } from '../../contexts/PathContext';
 import ImportDialog from '../dialogs/ImportDialog';
+import SettingsDialog from '../dialogs/SettingsDialog';
 
 interface HeaderProps {
   currentPath?: string;
@@ -12,6 +13,7 @@ interface HeaderProps {
 const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
   const { currentProject } = useProjectStore();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const { setCurrentPath } = usePathContext();
 
   const handleImportClick = () => {
@@ -23,6 +25,14 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
   const handleImportComplete = () => {
     setIsImportDialogOpen(false);
     onImportComplete?.();
+  };
+  
+  const handleSettingsClick = () => {
+    setIsSettingsDialogOpen(true);
+  };
+  
+  const handleSettingsClose = () => {
+    setIsSettingsDialogOpen(false);
   };
   
   // 从项目数据目录开始构建面包屑路径
@@ -86,6 +96,7 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
         
 
         <button 
+          onClick={handleSettingsClick}
           className="h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors flex items-center justify-center"
           title="设置"
         >
@@ -99,6 +110,12 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
         onClose={() => setIsImportDialogOpen(false)}
         currentPath={currentPath}
         onImportComplete={handleImportComplete}
+      />
+      
+      {/* 设置对话框 */}
+      <SettingsDialog
+        isOpen={isSettingsDialogOpen}
+        onClose={handleSettingsClose}
       />
     </div>
   );
