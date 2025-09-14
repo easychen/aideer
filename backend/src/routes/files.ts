@@ -518,6 +518,7 @@ router.put('/:id/rename', async (req, res) => {
 });
 
 // 批量删除文件接口
+// @ts-ignore
 router.delete('/batch', async (req, res) => {
   try {
     console.log('=== Batch delete request ===');

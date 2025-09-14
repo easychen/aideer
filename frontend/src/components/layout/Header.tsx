@@ -28,9 +28,7 @@ const Header = ({
   onToggleManagement,
   selectedFiles = [],
   onSelectAll,
-  onDeselectAll,
-  onBatchDelete,
-  onBatchMove
+  onDeselectAll
 }: HeaderProps) => {
   const { currentProject } = useProjectStore();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);

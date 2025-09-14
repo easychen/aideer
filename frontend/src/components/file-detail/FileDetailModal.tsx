@@ -245,8 +245,8 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg shadow-xl w-[90vw] h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 dark:bg-black/90 bg-white/90 flex items-center justify-center z-50 p-4">
+      <div className="bg-card rounded-lg shadow-xl w-[90vw] h-[90vh] overflow-hidden flex flex-col border">
         {/* 头部 */}
         <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -349,25 +349,25 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
                 文件信息
               </h3>
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">文件名:</span>
-                  <span className="text-sm font-medium">{file.name}</span>
+                <div className="flex items-start space-x-3">
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">文件名:</span>
+                  <span className="text-sm font-medium flex-1 truncate" title={file.name}>{file.name}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">大小:</span>
-                  <span className="text-sm font-medium">{formatFileSize(file.size)}</span>
+                <div className="flex items-start space-x-3">
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">大小:</span>
+                  <span className="text-sm font-medium flex-1">{formatFileSize(file.size)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">类型:</span>
-                  <span className="text-sm font-medium">{file.name.split('.').pop()?.toUpperCase() || '未知'}</span>
+                <div className="flex items-start space-x-3">
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">类型:</span>
+                  <span className="text-sm font-medium flex-1">{file.name.split('.').pop()?.toUpperCase() || '未知'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">修改时间:</span>
-                  <span className="text-sm font-medium">{formatDate(file.lastModified)}</span>
+                <div className="flex items-start space-x-3">
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">修改时间:</span>
+                  <span className="text-sm font-medium flex-1">{formatDate(file.lastModified)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">路径:</span>
-                  <span className="text-sm font-medium truncate" title={file.relativePath}>
+                <div className="flex items-start space-x-3">
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">路径:</span>
+                  <span className="text-sm font-medium flex-1 truncate" title={file.relativePath}>
                     {file.relativePath}
                   </span>
                 </div>

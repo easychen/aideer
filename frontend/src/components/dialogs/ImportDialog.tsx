@@ -124,6 +124,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       // 所有文件处理完成后，延迟通知父组件刷新
       setTimeout(() => {
         onImportComplete();
+        // 清空文件列表
+        setSelectedFiles([]);
       }, 1000);
     } finally {
       setIsUploading(false);
