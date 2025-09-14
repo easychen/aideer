@@ -75,11 +75,11 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
     switch (fileType) {
       case 'image':
         return (
-          <div className="w-full max-h-96 bg-muted rounded-lg overflow-hidden">
+          <div className="w-full bg-muted rounded-lg overflow-hidden">
             <img
               src={`${apiBaseUrl}/data/mybook/${file.relativePath}`}
               alt={file.name}
-              className="w-full h-full object-contain"
+              className="w-full object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';

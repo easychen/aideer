@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { FileText, Image, Music, Video, File } from 'lucide-react';
 import { FileItem } from '../../types/index';
 
@@ -12,6 +12,60 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
   // 从项目路径中提取项目名称
   const getProjectName = (projectPath: string): string => {
     return projectPath.split('/').pop() || '';
+  };
+
+  // 图片预览状态
+  const [isHovering, setIsHovering] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 处理鼠标移动事件
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    
+    setMousePosition({ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) });
+  };
+
+  // 处理鼠标进入事件
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+  };
+
+  // 处理鼠标离开事件
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setMousePosition({ x: 0.5, y: 0.5 });
+  };
+
+  // 处理图片加载完成事件
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+  };
+
+  // 计算图片显示位置
+  const getObjectPosition = () => {
+    if (!isHovering || !containerRef.current) return '50% 0%'; // 默认显示顶部
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const containerAspect = containerRect.width / containerRect.height;
+    const imageAspect = imageSize.width / imageSize.height;
+    
+    if (imageAspect > containerAspect) {
+      // 横向图片（宽>高），水平方向会被裁剪
+      const x = mousePosition.x * 100;
+      return `${x}% 0%`; // 保持顶部对齐
+    } else {
+      // 竖向图片（高>宽），垂直方向会被裁剪
+      const y = mousePosition.y * 100;
+      return `50% ${y}%`;
+    }
   };
 
   const getFileType = (fileName: string): 'image' | 'audio' | 'video' | 'document' | 'other' => {
@@ -39,11 +93,22 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
     switch (fileType) {
       case 'image':
         return (
-          <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden group">
+          <div 
+            ref={containerRef}
+            className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden group cursor-pointer"
+            onMouseMove={handleMouseMove}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
             <img
+              ref={imageRef}
               src={`${apiBaseUrl}/data/mybook/${file.relativePath}`}
               alt={file.name}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-200"
+              style={{
+                objectPosition: getObjectPosition()
+              }}
+              onLoad={handleImageLoad}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
