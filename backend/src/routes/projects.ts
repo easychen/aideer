@@ -3,6 +3,7 @@ import path from 'path';
 import { DatabaseService } from '../services/database.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { CreateProjectRequest, ApiResponse, Project } from '../types/index.js';
+import { PathUtils } from '../utils/pathUtils.js';
 
 const router: express.Router = express.Router();
 const dbService = DatabaseService.getInstance();
@@ -43,10 +44,10 @@ router.post('/', async (req, res) => {
     }
     
     // 构建完整的项目路径（限制在data目录下）
-    const fullProjectPath = path.resolve(PROJECT_DATA_ROOT, projectPath);
+    const fullProjectPath = PathUtils.getAbsolutePath(projectPath);
     
     // 验证路径是否在允许的根目录下
-    if (!fullProjectPath.startsWith(PROJECT_DATA_ROOT)) {
+    if (!PathUtils.isPathAllowed(fullProjectPath)) {
       return res.status(400).json({
         success: false,
         error: 'Project path must be within the data directory'
@@ -63,8 +64,8 @@ router.post('/', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 创建项目（使用完整路径）
-    const project = await dbService.createProject({ name, path: fullProjectPath, description });
+    // 创建项目（使用相对路径存储）
+    const project = await dbService.createProject({ name, path: projectPath, description });
     
     return res.json({
       success: true,
@@ -94,8 +95,9 @@ router.post('/:id/scan', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 扫描目录
-    const files = await fsService.scanDirectory(project.path, projectId);
+    // 扫描目录（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const files = await fsService.scanDirectory(absolutePath, projectId);
     
     return res.json({
       success: true,

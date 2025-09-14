@@ -1,7 +1,10 @@
 import express from 'express';
+import path from 'path';
+import fs from 'fs-extra';
 import { DatabaseService } from '../services/database.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { ApiResponse, DirectoryNode, FileItem } from '../types/index.js';
+import { PathUtils } from '../utils/pathUtils.js';
 
 const router: express.Router = express.Router();
 const dbService = DatabaseService.getInstance();
@@ -21,8 +24,9 @@ router.get('/tree/:projectId', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 获取项目所有文件和目录
-    const files = await fsService.scanDirectory(project.path, projectId);
+    // 扫描项目目录（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const files = await fsService.scanDirectory(absolutePath, projectId);
     
     // 构建文件树
     const tree = buildDirectoryTree(files);
@@ -62,7 +66,9 @@ router.get('/', async (req, res) => {
       } as ApiResponse);
     }
     
-    const files = await fsService.scanDirectory(project.path, parseInt(projectId.toString()));
+    // 构建完整目录路径（将相对路径转换为绝对路径）
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const files = await fsService.scanDirectory(projectAbsolutePath, parseInt(projectId.toString()));
     
     // 过滤指定路径下的直接子项
     const targetPath = path ? path.toString() : '';

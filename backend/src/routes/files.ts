@@ -7,6 +7,7 @@ import mimeTypes from 'mime-types';
 import { DatabaseService } from '../services/database.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { ApiResponse, FileItem, FileQueryParams } from '../types/index.js';
+import { PathUtils } from '../utils/pathUtils.js';
 
 const router: express.Router = express.Router();
 const dbService = DatabaseService.getInstance();
@@ -56,8 +57,9 @@ router.get('/', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 直接从文件系统扫描文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    // 直接从文件系统扫描文件（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
     
     // 为每个文件生成ID
     const filesWithId = scannedFiles.map(file => ({
@@ -133,8 +135,9 @@ router.get('/:id', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 扫描项目文件并查找匹配的文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    // 扫描项目文件并查找匹配的文件（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
     const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!file) {
@@ -191,8 +194,9 @@ router.put('/:id/content/binary', updateUpload.single('file'), async (req, res) 
       } as ApiResponse);
     }
     
-    // 扫描项目文件并查找匹配的文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    // 扫描项目文件并查找匹配的文件（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
     const targetFile = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!targetFile) {
@@ -266,8 +270,9 @@ router.put('/:id/content', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 扫描项目文件并查找匹配的文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    // 扫描项目文件并查找匹配的文件（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
     const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!file) {
@@ -351,8 +356,9 @@ router.post('/', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 构建完整文件路径
-    const fullPath = path.join(project.path, relativePath);
+    // 构建完整文件路径（将相对路径转换为绝对路径）
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const fullPath = path.join(projectAbsolutePath, relativePath);
     
     // 检查文件是否已存在
     if (await fs.pathExists(fullPath)) {
@@ -440,8 +446,9 @@ router.put('/:id/rename', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 扫描项目文件并查找匹配的文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    // 扫描项目文件并查找匹配的文件（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
     const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!file) {
@@ -476,7 +483,8 @@ router.put('/:id/rename', async (req, res) => {
     // 获取重命名后的文件信息
     const fileStats = await fs.stat(newPath);
     const mimeType = mimeTypes.lookup(newPath) || undefined;
-    const newRelativePath = path.relative(project.path, newPath);
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const newRelativePath = path.relative(projectAbsolutePath, newPath);
     
     const renamedFile: FileItem = {
       id: generateFileId(newPath),
@@ -533,8 +541,9 @@ router.delete('/:id', async (req, res) => {
       } as ApiResponse);
     }
     
-    // 扫描项目文件并查找匹配的文件
-    const scannedFiles = await fsService.scanDirectory(project.path, project.id);
+    // 扫描项目文件并查找匹配的文件（将相对路径转换为绝对路径）
+    const absolutePath = PathUtils.getAbsolutePath(project.path);
+    const scannedFiles = await fsService.scanDirectory(absolutePath, project.id);
     const file = scannedFiles.find(f => generateFileId(f.path) === fileId);
     
     if (!file) {
@@ -608,7 +617,8 @@ router.post('/upload', upload.array('files'), async (req, res) => {
       const fileRelativePath = filePathsArray[i] || file.originalname;
       // 构建目标路径
       let relativePath = path.join(targetPath, fileRelativePath);
-      let fullPath = path.join(project.path, relativePath);
+      const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+      let fullPath = path.join(projectAbsolutePath, relativePath);
        
        // 检查文件是否已存在，如果存在则自动添加数字后缀
        let counter = 1;
