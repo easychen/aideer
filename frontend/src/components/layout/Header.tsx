@@ -1,4 +1,4 @@
-import { Plus, FolderPlus, Settings, Search, ChevronRight, Home } from 'lucide-react';
+import { Plus, Settings, ChevronRight, Home } from 'lucide-react';
 import { useState } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { usePathContext } from '../../contexts/PathContext';
@@ -69,13 +69,8 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
         ))}
       </div>
       
-      {/* 中间：搜索框 */}
-      <div className="flex-1 max-w-md mx-8">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <div className="h-9 bg-muted rounded pl-10"></div>
-        </div>
-      </div>
+      {/* 中间：空白区域 */}
+      <div className="flex-1"></div>
       
       {/* 右侧：操作按钮 */}
       <div className="flex items-center space-x-2">
@@ -89,13 +84,7 @@ const Header = ({ currentPath = '', onImportComplete }: HeaderProps) => {
           <span className="text-sm">导入</span>
         </button>
         
-        <button 
-          className="h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors flex items-center justify-center"
-          title="新建文件夹"
-        >
-          <FolderPlus className="h-4 w-4" />
-        </button>
-        
+
         <button 
           className="h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors flex items-center justify-center"
           title="设置"

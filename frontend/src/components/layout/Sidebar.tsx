@@ -1,4 +1,4 @@
-import { ChevronDown, Folder, File, ChevronRight, RefreshCw, FilePlus, FolderPlus, Minimize2 } from 'lucide-react';
+import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { apiService } from '../../services/api';
@@ -220,9 +220,10 @@ const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTri
 interface SidebarProps {
   refreshTrigger?: number;
   onRefresh?: () => void;
+  onMinimize?: () => void;
 }
 
-const Sidebar = ({ refreshTrigger, onRefresh }: SidebarProps) => {
+const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
@@ -302,22 +303,11 @@ const Sidebar = ({ refreshTrigger, onRefresh }: SidebarProps) => {
             >
               <RefreshCw className="w-4 h-4 text-muted-foreground" />
             </button>
-            <button 
-              className="p-2 hover:bg-muted/50 rounded-md transition-colors"
-              title="新建文件"
-            >
-              <FilePlus className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <button 
-              className="p-2 hover:bg-muted/50 rounded-md transition-colors"
-              title="新建文件夹"
-            >
-              <FolderPlus className="w-4 h-4 text-muted-foreground" />
-            </button>
           </div>
           <button 
             className="p-2 hover:bg-muted/50 rounded-md transition-colors"
-            title="折叠所有"
+            title="最小化侧边栏"
+            onClick={onMinimize}
           >
             <Minimize2 className="w-4 h-4 text-muted-foreground" />
           </button>

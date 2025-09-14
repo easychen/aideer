@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Eye, MoreVertical, FileText, Grid3X3, List, Minus, Plus, Image, Film } from 'lucide-react';
+import { Download, Eye, MoreVertical, FileText, Grid3X3, List, Minus, Plus, Image, Film, Search } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
@@ -145,6 +145,10 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
     position: { x: number; y: number };
     file: FileItem | null;
   }>({ isOpen: false, position: { x: 0, y: 0 }, file: null });
+  
+  // 搜索状态
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
   
   // 视图设置
   const { viewMode, previewSize, setViewMode, setPreviewSize } = useViewSettings();
@@ -294,9 +298,16 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   };
 
   // 过滤和排序文件
-  const filteredFiles = filterMode === 'media' 
+  let filteredFiles = filterMode === 'media' 
     ? files.filter(isMediaFile)
     : files;
+
+  // 按搜索关键字过滤
+  if (searchKeyword.trim()) {
+    filteredFiles = filteredFiles.filter(file => 
+      file.name.toLowerCase().includes(searchKeyword.toLowerCase())
+    );
+  }
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
     let comparison = 0;
@@ -362,6 +373,32 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
             <p className="text-sm text-muted-foreground">{sortedFiles.length} 个文件</p>
           </div>
           <div className="flex items-center space-x-4">
+            {/* 搜索区域 */}
+            <div className="flex items-center space-x-2">
+              {isSearchOpen && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="搜索文件名..."
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    className="w-64 pl-10 pr-4 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    autoFocus
+                  />
+                </div>
+              )}
+              <button
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className={`p-2 rounded-md transition-colors ${
+                  isSearchOpen ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                }`}
+                title="搜索文件"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </div>
+            
             {/* 视图模式切换 */}
             <div className="flex items-center space-x-1 border border-border rounded-md p-1">
               <button
