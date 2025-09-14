@@ -140,4 +140,77 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// 更新项目
+router.put('/:id', async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    const updates = req.body;
+    
+    // 检查项目是否存在
+    const existingProject = await dbService.getProjectById(projectId);
+    if (!existingProject) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 如果更新路径，需要验证新路径
+    if (updates.path) {
+      const fullProjectPath = PathUtils.getAbsolutePath(updates.path);
+      if (!PathUtils.isPathAllowed(fullProjectPath)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Project path must be within the data directory'
+        } as ApiResponse);
+      }
+    }
+    
+    // 更新项目
+    const updatedProject = await dbService.updateProject(projectId, updates);
+    
+    return res.json({
+      success: true,
+      data: updatedProject,
+      message: 'Project updated successfully'
+    } as ApiResponse<Project>);
+  } catch (error) {
+    console.error('Error updating project:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update project'
+    } as ApiResponse);
+  }
+});
+
+// 删除项目
+router.delete('/:id', async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    
+    // 检查项目是否存在
+    const existingProject = await dbService.getProjectById(projectId);
+    if (!existingProject) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found'
+      } as ApiResponse);
+    }
+    
+    // 删除项目（注意：这里只删除数据库记录，不删除文件系统中的文件）
+    await dbService.deleteProject(projectId);
+    
+    return res.json({
+      success: true,
+      message: 'Project deleted successfully'
+    } as ApiResponse);
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to delete project'
+    } as ApiResponse);
+  }
+});
+
 export default router;

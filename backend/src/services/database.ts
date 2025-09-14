@@ -138,6 +138,41 @@ export class DatabaseService {
     return rows.length > 0 ? ProjectModel.fromRow(rows[0]) : null;
   }
   
+  public async updateProject(id: number, updates: Partial<Project>): Promise<Project> {
+    const row = ProjectModel.toRow(updates);
+    const setParts = [];
+    const params = [];
+    
+    if (updates.name !== undefined) {
+      setParts.push('name = ?');
+      params.push(updates.name);
+    }
+    if (updates.path !== undefined) {
+      setParts.push('path = ?');
+      params.push(updates.path);
+    }
+    if (updates.description !== undefined) {
+      setParts.push('description = ?');
+      params.push(updates.description);
+    }
+    
+    setParts.push('updated_at = ?');
+    params.push(new Date().toISOString());
+    params.push(id);
+    
+    await this.execute(
+      `UPDATE projects SET ${setParts.join(', ')} WHERE id = ?`,
+      params
+    );
+    
+    const rows = await this.query('SELECT * FROM projects WHERE id = ?', [id]);
+    return ProjectModel.fromRow(rows[0]);
+  }
+  
+  public async deleteProject(id: number): Promise<void> {
+    await this.execute('DELETE FROM projects WHERE id = ?', [id]);
+  }
+  
   // 文件相关操作已移除，现在直接从文件系统读取
   
   public async close(): Promise<void> {

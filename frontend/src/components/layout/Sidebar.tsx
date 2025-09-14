@@ -1,11 +1,13 @@
-import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2 } from 'lucide-react';
+import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { apiService } from '../../services/api';
-import { DirectoryNode, FileItem } from '../../types/index';
+import { DirectoryNode, FileItem, Project } from '../../types/index';
 import { usePathContext } from '../../contexts/PathContext';
 import FileDetailModal from '../file-detail/FileDetailModal';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
+import CreateProjectDialog from '../dialogs/CreateProjectDialog';
+import EditProjectDialog from '../dialogs/EditProjectDialog';
 
 interface FileNode {
   id: string;
@@ -250,6 +252,8 @@ interface SidebarProps {
 const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [internalRefreshTrigger, setInternalRefreshTrigger] = useState(0);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const { projects, currentProject, fetchProjects, setCurrentProject } = useProjectStore();
   
   const handleRefresh = () => {
@@ -270,38 +274,64 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
     <div className="h-full bg-card flex flex-col">
       {/* 项目选择器 */}
       <div className="p-4 border-b border-border">
-        <div className="relative">
-          <button 
-            className="w-full flex items-center justify-between p-2 bg-background border border-border rounded-md hover:bg-muted/50 transition-colors"
-            onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
-          >
-            <div className="flex items-center space-x-2">
-              <Folder className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm truncate">{currentProject?.name || '选择项目'}</span>
-            </div>
-            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {isProjectDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-10">
-              {projects.map((project) => (
-                <button
-                  key={project.id}
-                  className="w-full flex items-center space-x-2 p-2 text-left hover:bg-muted/50 transition-colors first:rounded-t-md last:rounded-b-md"
-                  onClick={() => {
-                    setCurrentProject(project);
-                    setIsProjectDropdownOpen(false);
-                  }}
-                >
-                  <Folder className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <div className="text-sm font-medium">{project.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{project.path}</div>
+        <div className="flex items-center space-x-2">
+          <div className="relative flex-1">
+            <button 
+              className="w-full flex items-center justify-between p-2 bg-background border border-border rounded-md hover:bg-muted/50 transition-colors"
+              onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+            >
+              <div className="flex items-center space-x-2">
+                <Folder className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm truncate">{currentProject?.name || '选择项目'}</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isProjectDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {isProjectDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-10">
+                {projects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="flex items-center group hover:bg-muted/50 transition-colors first:rounded-t-md last:rounded-b-md"
+                  >
+                    <button
+                      className="flex-1 flex items-center space-x-2 p-2 text-left"
+                      onClick={() => {
+                        setCurrentProject(project);
+                        setIsProjectDropdownOpen(false);
+                      }}
+                    >
+                      <Folder className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{project.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{project.path}</div>
+                      </div>
+                    </button>
+                    <button
+                      className="p-2 opacity-0 group-hover:opacity-100 hover:bg-muted/70 rounded-md transition-all mr-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingProject(project);
+                        setIsProjectDropdownOpen(false);
+                      }}
+                      title="编辑项目"
+                    >
+                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    </button>
                   </div>
-                </button>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* 创建项目按钮 */}
+           <button
+             onClick={() => setShowCreateDialog(true)}
+             className="p-2 border border-border rounded-md hover:bg-muted/50 transition-colors flex-shrink-0 text-muted-foreground hover:text-foreground"
+             title="创建新项目"
+           >
+             <Plus className="w-4 h-4" />
+           </button>
         </div>
       </div>
       
@@ -337,6 +367,24 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
           </button>
         </div>
       </div>
+      
+      {/* 创建项目对话框 */}
+       <CreateProjectDialog
+         isOpen={showCreateDialog}
+         onClose={() => {
+           setShowCreateDialog(false);
+           fetchProjects(); // 刷新项目列表
+         }}
+       />
+       
+       {/* 编辑项目对话框 */}
+       {editingProject && (
+         <EditProjectDialog
+           isOpen={!!editingProject}
+           onClose={() => setEditingProject(null)}
+           project={editingProject}
+         />
+       )}
     </div>
   );
 };
