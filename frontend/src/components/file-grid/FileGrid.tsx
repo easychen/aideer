@@ -6,6 +6,7 @@ import { getFileIcon, getFileTypeColor } from '../../utils/fileIcons';
 import FilePreview from '../file-preview/FilePreview';
 import ContextMenu from '../context-menu/ContextMenu';
 import { useViewSettings, previewSizeConfig, PreviewSize } from '../../stores/viewSettings';
+import { useFileUpdate } from '../../contexts/FileUpdateContext';
 
 interface FileGridProps {
   projectId: number;
@@ -152,6 +153,9 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
   
   // 视图设置
   const { viewMode, previewSize, setViewMode, setPreviewSize } = useViewSettings();
+  
+  // 全局文件更新
+  const { triggerFileUpdate } = useFileUpdate();
 
   useEffect(() => {
     loadFiles();
@@ -196,11 +200,11 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
     if (window.confirm(`确定要删除文件 "${file.name}" 吗？此操作不可撤销。`)) {
       try {
         await apiService.deleteFile(file.id, projectId);
-        // 重新加载文件列表
-        await loadFiles();
+        // 触发全局文件更新
+        triggerFileUpdate(projectId);
       } catch (error) {
         console.error('Failed to delete file:', error);
-        alert('删除文件失败');
+        console.error('删除文件失败');
       }
     }
   };
@@ -210,14 +214,14 @@ const FileGrid = ({ projectId, currentPath = '', onFileSelect, selectedFileId }:
     
     try {
       await apiService.renameFile(renamingFile.id, projectId, newFileName.trim());
-      // 重新加载文件列表
-      await loadFiles();
+      // 触发全局文件更新
+      triggerFileUpdate(projectId);
       setRenameDialogOpen(false);
       setRenamingFile(null);
       setNewFileName('');
     } catch (error) {
       console.error('Failed to rename file:', error);
-      alert('重命名文件失败');
+      console.error('重命名文件失败');
     }
   };
 

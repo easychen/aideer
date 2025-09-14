@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
-import { X, Download, Eye, Calendar, HardDrive, FileText, Image, Music, Video, File, MessageCircle, Edit } from 'lucide-react';
+import { X, Download, Eye, Calendar, HardDrive, FileText, Image, Music, Video, File, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { FileItem } from '../../types/index';
+import { apiService } from '../../services/api';
+import { useFileUpdate } from '../../contexts/FileUpdateContext';
 
 interface FileDetailModalProps {
   file: FileItem | null;
   isOpen: boolean;
   onClose: () => void;
+  projectId: number;
+  onFileUpdated?: () => void; // 文件更新后的回调，用于刷新文件列表
 }
 
-const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
+const FileDetailModal = ({ file, isOpen, onClose, projectId, onFileUpdated }: FileDetailModalProps) => {
   const [leftWidth, setLeftWidth] = useState(30); // 左侧栏宽度百分比
   const [rightWidth, setRightWidth] = useState(25); // 右侧栏宽度百分比
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newFileName, setNewFileName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { triggerFileUpdate } = useFileUpdate();
   
   if (!isOpen || !file) return null;
 
@@ -157,6 +165,50 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
     document.body.removeChild(link);
   };
 
+  const handleRename = () => {
+    setNewFileName(file.name);
+    setIsRenaming(true);
+  };
+
+  const confirmRename = async () => {
+    if (newFileName && newFileName !== file.name) {
+      setIsLoading(true);
+      try {
+        await apiService.renameFile(file.id.toString(), projectId, newFileName);
+        // 更新本地文件对象
+        file.name = newFileName;
+        // 触发文件列表刷新
+        triggerFileUpdate();
+        setIsRenaming(false);
+      } catch (error) {
+        console.error('重命名文件失败:', error);
+        console.error('重命名文件失败:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const cancelRename = () => {
+    setIsRenaming(false);
+    setNewFileName('');
+  };
+
+  const handleDelete = async () => {
+    if (confirm(`确定要删除文件 "${file.name}" 吗？此操作不可撤销。`)) {
+      try {
+        await apiService.deleteFile(file.id.toString(), projectId);
+        // 触发文件列表刷新
+        triggerFileUpdate();
+        onClose(); // 删除后关闭模态框
+        // 文件删除成功，通过onClose关闭模态框已经给用户反馈
+      } catch (error) {
+        console.error('删除文件失败:', error);
+        console.error('删除文件失败:', error);
+      }
+    }
+  };
+
   const handleMouseDown = (e: React.MouseEvent, type: 'left' | 'right') => {
     e.preventDefault();
     const startX = e.clientX;
@@ -203,6 +255,20 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
           </div>
           <div className="flex items-center space-x-2">
             <button
+              onClick={handleRename}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              title="重命名文件"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              title="删除文件"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button
               onClick={handleDownload}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
               title="下载文件"
@@ -217,6 +283,44 @@ const FileDetailModal = ({ file, isOpen, onClose }: FileDetailModalProps) => {
             </button>
           </div>
         </div>
+
+        {/* 重命名对话框 */}
+        {isRenaming && (
+          <div className="p-4 border-b border-border bg-muted/50">
+            <div className="flex items-center space-x-3">
+              <span className="text-sm font-medium">重命名文件:</span>
+              <input
+                type="text"
+                value={newFileName}
+                onChange={(e) => setNewFileName(e.target.value)}
+                className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="请输入新的文件名"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    confirmRename();
+                  } else if (e.key === 'Escape') {
+                    cancelRename();
+                  }
+                }}
+              />
+              <button
+                onClick={confirmRename}
+                disabled={isLoading || !newFileName || newFileName === file.name}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? '重命名中...' : '确认'}
+              </button>
+              <button
+                onClick={cancelRename}
+                disabled={isLoading}
+                className="px-4 py-2 border border-border rounded-md text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 三栏布局 */}
         <div className="flex flex-1 overflow-hidden">

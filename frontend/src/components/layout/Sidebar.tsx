@@ -5,6 +5,7 @@ import { apiService } from '../../services/api';
 import { DirectoryNode, FileItem } from '../../types/index';
 import { usePathContext } from '../../contexts/PathContext';
 import FileDetailModal from '../file-detail/FileDetailModal';
+import { useFileUpdate } from '../../contexts/FileUpdateContext';
 
 interface FileNode {
   id: string;
@@ -117,6 +118,7 @@ const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTri
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { fileUpdateTrigger, onFileUpdate } = useFileUpdate();
   
   useEffect(() => {
     loadFileTree();
@@ -128,6 +130,23 @@ const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTri
       loadFileTree();
     }
   }, [refreshTrigger]);
+  
+  // 监听全局文件更新事件
+  useEffect(() => {
+    const unsubscribe = onFileUpdate((updatedProjectId) => {
+      // 如果没有指定项目ID或者是当前项目，则刷新文件树
+      if (!updatedProjectId || updatedProjectId === projectId) {
+        loadFileTree();
+      }
+    });
+    
+    return unsubscribe;
+  }, [projectId, onFileUpdate]);
+  
+  // 监听全局文件更新触发器
+  useEffect(() => {
+    loadFileTree();
+  }, [fileUpdateTrigger]);
   
   const loadFileTree = async () => {
     try {
@@ -211,6 +230,11 @@ const FileTree = ({ projectId, refreshTrigger }: { projectId: number; refreshTri
         onClose={() => {
           setIsDetailModalOpen(false);
           setSelectedFile(null);
+        }}
+        projectId={projectId}
+        onFileUpdated={() => {
+          // 文件更新后重新加载文件树
+          loadFileTree();
         }}
       />
     </div>

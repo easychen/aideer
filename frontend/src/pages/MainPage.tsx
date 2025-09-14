@@ -6,6 +6,7 @@ import FileDetailModal from '../components/file-detail/FileDetailModal';
 import { FileItem } from '../types/index';
 import { useProjectStore } from '../stores/useProjectStore';
 import { usePathContext } from '../contexts/PathContext';
+import { useFileUpdate } from '../contexts/FileUpdateContext';
 
 interface OutletContext {
   refreshTrigger: number;
@@ -17,6 +18,7 @@ const MainPage = () => {
   const { refreshTrigger } = useOutletContext<OutletContext>();
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const { fileUpdateTrigger, onFileUpdate } = useFileUpdate();
 
   useEffect(() => {
     // 初始化时加载项目列表
@@ -36,6 +38,23 @@ const MainPage = () => {
 
   // 监听刷新触发器，当导入完成时重新渲染组件
   const [fileGridKey, setFileGridKey] = useState(0);
+  
+  // 监听全局文件更新事件
+  useEffect(() => {
+    const unsubscribe = onFileUpdate((updatedProjectId) => {
+      // 如果没有指定项目ID或者是当前项目，则刷新文件网格
+      if (!updatedProjectId || (currentProject && updatedProjectId === currentProject.id)) {
+        setFileGridKey(prev => prev + 1);
+      }
+    });
+    
+    return unsubscribe;
+  }, [currentProject, onFileUpdate]);
+  
+  // 监听全局文件更新触发器
+  useEffect(() => {
+    setFileGridKey(prev => prev + 1);
+  }, [fileUpdateTrigger]);
   
   useEffect(() => {
     if (refreshTrigger > 0) {
@@ -84,6 +103,10 @@ const MainPage = () => {
         onClose={() => {
           setIsDetailModalOpen(false);
           setSelectedFile(null);
+        }}
+        projectId={currentProject.id}
+        onFileUpdated={() => {
+          // 保持兼容性，但实际刷新由全局Context处理
         }}
       />
     </div>
