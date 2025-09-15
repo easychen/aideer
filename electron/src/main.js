@@ -3,6 +3,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import Store from 'electron-store';
+import { shellEnv } from 'shell-env';
+import fs from 'fs';
 
 // 获取当前文件的目录路径 (ESM 替代 __dirname)
 const __filename = fileURLToPath(import.meta.url);
@@ -145,26 +147,42 @@ function createWindow() {
 }
 
 // 启动后端服务器
-function startBackendServer() {
+async function startBackendServer() {
+  // 修复环境变量
+  const sENV = await shellEnv();
+  const PATH = sENV.PATH;
+  if (PATH) process.env.PATH = PATH;
+
   const backendPath = join(__dirname, '../resources/index.js');
+
+  // 日志文件路径
+const LOG_FILE = '/tmp/deerlog.log';
+
+// 简单的日志函数
+function log(...args) {
+  const msg = `[${new Date().toISOString()}] ${args.join(' ')}\n`;
+  fs.appendFileSync(LOG_FILE, msg);
+}
   
-  backendProcess = spawn('node', [backendPath], {
+  backendProcess = spawn(process.execPath, [backendPath], {
     stdio: 'inherit',
-    env: { ...process.env, PORT: BACKEND_PORT }
+    env: { ...process.env, PORT: BACKEND_PORT, ELECTRON_RUN_AS_NODE: '1' }
   });
   
   backendProcess.on('error', (error) => {
+    log('Failed to start backend server:', error);
     console.error('Failed to start backend server:', error);
   });
   
   backendProcess.on('exit', (code) => {
+    log(`Backend server exited with code ${code}`);
     console.log(`Backend server exited with code ${code}`);
   });
 }
 
 // 当 Electron 完成初始化并准备创建浏览器窗口时调用此方法
-app.whenReady().then(() => {
-  startBackendServer();
+app.whenReady().then(async () => {
+  await startBackendServer();
   
   // 等待后端服务器启动后再创建窗口
   setTimeout(() => {
