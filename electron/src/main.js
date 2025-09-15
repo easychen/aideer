@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen, Tray } from 'electron';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
@@ -14,16 +14,40 @@ const store = new Store();
 // 保持对窗口对象的全局引用
 let mainWindow = null;
 let backendProcess = null;
+let appicon = null;
 
 const isDev = process.env.NODE_ENV === 'development';
-const BACKEND_PORT = 15542;
+const BACKEND_PORT = 15543;
 const FRONTEND_URL = `http://localhost:${BACKEND_PORT}`;
 
 function createWindow() {
+  // 获取屏幕尺寸
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  let windowWidth = 1200;
+  let windowHeight = 800;
+  let windowX = Math.round((width - windowWidth) / 2);
+  let windowY = Math.round((height - windowHeight) / 2);
+
+  // 从存储中恢复窗口位置和大小
+  const windowBounds = store.get('windowBounds');
+  if (windowBounds) {
+    const { width: savedWidth, height: savedHeight, x, y } = windowBounds;
+    if (savedWidth) windowWidth = savedWidth;
+    if (savedHeight) windowHeight = savedHeight;
+
+    const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+
+    // 如果位置超出显示器，重置为居中
+    windowX = x + savedWidth > screenWidth ? Math.round((screenWidth - windowWidth) / 2) : x;
+    windowY = y + savedHeight > screenHeight ? Math.round((screenHeight - windowHeight) / 2) : y;
+  }
+
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: windowWidth,
+    height: windowHeight,
+    x: windowX,
+    y: windowY,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
@@ -33,6 +57,7 @@ function createWindow() {
     },
     titleBarStyle: 'hiddenInset',
     show: false, // 先隐藏，等待ready-to-show事件
+    autoHideMenuBar: process.platform === 'win32' ? true : false,
   });
 
   // 加载应用
@@ -53,10 +78,69 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // 处理外部链接
-  mainWindow.webContents?.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
+  // 当窗口移动或调整大小时，保存位置和大小
+  mainWindow.on('move', () => {
+    const { width, height, x, y } = mainWindow.getBounds();
+    store.set('windowBounds', { width, height, x, y });
+  });
+  mainWindow.on('resize', () => {
+    const { width, height, x, y } = mainWindow.getBounds();
+    store.set('windowBounds', { width, height, x, y });
+  });
+
+  // 创建应用菜单
+  const menu = Menu.buildFromTemplate([
+    {
+      label: '关于',
+      submenu: [
+        { label: `AiDeer V${app.getVersion()}`, role: 'about' },
+        { label: '退出', role: 'quit', accelerator: 'CmdOrCtrl+Q', click: () => { app.quit(); } },
+      ]
+    },
+    {
+      label: '编辑',
+      submenu: [
+        { label: '撤销', role: 'undo', accelerator: 'CmdOrCtrl+Z' },
+        { label: '重做', role: 'redo', accelerator: 'CmdOrCtrl+Y' },
+        { type: 'separator' },
+        { label: '剪切', role: 'cut', accelerator: 'CmdOrCtrl+X' },
+        { label: '复制', role: 'copy', accelerator: 'CmdOrCtrl+C' },
+        { label: '粘贴', role: 'paste', accelerator: 'CmdOrCtrl+V' },
+        { label: '全选', role: 'selectAll', accelerator: 'CmdOrCtrl+A' },
+        { type: 'separator' },
+        { label: '查找', role: 'find', accelerator: 'CmdOrCtrl+F' },
+        { label: '替换', role: 'replace', accelerator: 'CmdOrCtrl+H' },
+        { type: 'separator' },
+        { label: '开发者工具', role: 'toggleDevTools', accelerator: 'CmdOrCtrl+Alt+I' },
+        { label: '刷新', role: 'reload', accelerator: 'CmdOrCtrl+R' },
+      ]
+    }
+  ]);
+
+  Menu.setApplicationMenu(menu);
+
+  // Windows 下设置系统托盘菜单
+  if (process.platform === 'win32') {
+    try {
+      appicon = new Tray(join(__dirname, '../icon.png'));
+      appicon.setToolTip('AiDeer');
+      appicon.setContextMenu(menu);
+    } catch (error) {
+      console.log('Failed to create tray icon:', error);
+    }
+  }
+
+  // 处理外部链接 - 监听窗口加载完成事件
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      // 允许 file: 协议
+      if (url.startsWith('file:')) {
+        return { action: 'allow' };
+      }
+      // 其他外部链接用浏览器打开
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
   });
 }
 
