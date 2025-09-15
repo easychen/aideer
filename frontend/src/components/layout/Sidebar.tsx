@@ -1,4 +1,4 @@
-import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal, FolderOpen, FolderPlus, FolderTree, ListTree } from 'lucide-react';
+import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal, FolderPlus, FolderTree, ListTree } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import CreateFolderDialog from '../dialogs/CreateFolderDialog';
@@ -18,12 +18,15 @@ interface FileNode {
   children?: FileNode[];
 }
 
-const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false, onFileClick }: { node: FileNode; level?: number; projectId: number; showDirectoriesOnly?: boolean; onFileClick?: (file: FileItem) => void }) => {
+const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false, onFileClick, currentPath }: { node: FileNode; level?: number; projectId: number; showDirectoriesOnly?: boolean; onFileClick?: (file: FileItem) => void; currentPath?: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [children, setChildren] = useState<FileNode[]>(node.children || []);
   const [loading, setLoading] = useState(false);
   const [hasLoadedChildren, setHasLoadedChildren] = useState(!!node.children);
   const { setCurrentPath } = usePathContext();
+  
+  // 检查当前节点是否是选中的路径
+  const isCurrentPath = currentPath === node.path;
   
   const hasChildren = node.type === 'folder' && (children.length > 0 || !hasLoadedChildren);
   
@@ -84,7 +87,11 @@ const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false,
   return (
     <div>
       <div 
-        className="flex items-center py-1 px-2 hover:bg-muted/50 rounded cursor-pointer transition-colors"
+        className={`flex items-center py-1 px-2 rounded cursor-pointer transition-colors ${
+          isCurrentPath 
+            ? 'bg-primary/10 text-primary ' 
+            : 'hover:bg-muted/50'
+        }`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={handleSelect}
       >
@@ -132,7 +139,8 @@ const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false,
                 level={level + 1} 
                 projectId={projectId} 
                 showDirectoriesOnly={showDirectoriesOnly}
-                onFileClick={onFileClick} 
+                onFileClick={onFileClick}
+                currentPath={currentPath} 
               />
             );
           })}
@@ -142,7 +150,7 @@ const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false,
   );
 };
 
-const FileTree = ({ projectId, refreshTrigger, showDirectoriesOnly = false }: { projectId: number; refreshTrigger?: number; showDirectoriesOnly?: boolean }) => {
+const FileTree = ({ projectId, refreshTrigger, showDirectoriesOnly = false, currentPath }: { projectId: number; refreshTrigger?: number; showDirectoriesOnly?: boolean; currentPath?: string }) => {
   const [treeData, setTreeData] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -248,6 +256,7 @@ const FileTree = ({ projectId, refreshTrigger, showDirectoriesOnly = false }: { 
           node={node} 
           projectId={projectId} 
           showDirectoriesOnly={showDirectoriesOnly}
+          currentPath={currentPath}
           onFileClick={(file) => {
             setSelectedFile(file);
             setIsDetailModalOpen(true);
@@ -387,6 +396,7 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
             projectId={currentProject.id} 
             refreshTrigger={refreshTrigger || internalRefreshTrigger}
             showDirectoriesOnly={showFilesOnly}
+            currentPath={currentPath}
           />
         ) : (
           <div className="text-center py-8 text-sm text-muted-foreground">
