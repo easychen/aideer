@@ -13,6 +13,8 @@ export function registerOfficialPlugins() {
   };
   pluginRegistry.register(plugin);
   console.log('官方插件注册完成');
+  console.log('API URL:', import.meta.env.VITE_API_URL);
+  console.log('RESOURCE HOST:', import.meta.env.VITE_RESOURCE_HOST);
 }
 
 // 导出所有官方插件

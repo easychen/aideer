@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import fs from 'fs';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -34,9 +34,7 @@ const PORT = process.env.PORT || 3001;
 //   }
 // }));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['http://localhost:3000'] 
-    : '*',
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
@@ -44,6 +42,11 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 添加一个前端网站的自动化挂载 
+if(fs.existsSync(path.join(__dirname, './site'))) {
+  app.use(express.static(path.join(__dirname, './site')));
+}
 
 // 静态文件服务
 app.use('/thumbnails', express.static(path.join(__dirname, '../thumbnails')));

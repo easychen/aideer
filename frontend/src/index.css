@@ -113,3 +113,7 @@
 .dragging {
   @apply opacity-50;
 }
+
+.draggable-header {
+  -webkit-app-region: drag;
+}

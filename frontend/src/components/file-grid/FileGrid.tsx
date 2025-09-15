@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Grid3X3, List, Minus, Plus, Search, Image as ImageIcon, Check } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
+import { useProjectStore } from '../../stores/useProjectStore';
 
 import FilePreview from '../file-preview/FilePreview';
 import ContextMenu from '../context-menu/ContextMenu';
@@ -37,6 +38,7 @@ const FileGrid = ({
   onToggleFileSelection,
   updateAllFiles
 }: FileGridProps) => {
+  const { currentProject } = useProjectStore();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -156,8 +158,8 @@ const FileGrid = ({
   };
 
   const handleDownload = (file: FileItem) => {
-    const apiBaseUrl = 'http://localhost:3001';
-    const downloadUrl = `${apiBaseUrl}/data/mybook/${file.relativePath}`;
+    const apiBaseUrl = import.meta.env.VITE_RESOURCE_HOST || '';
+    const downloadUrl = `${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = file.name;

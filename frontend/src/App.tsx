@@ -15,6 +15,7 @@ function App() {
   return (
     <FileUpdateProvider>
       <div className="min-h-screen bg-background">
+         <div className="fixed top-0 left-0 right-0 z-50 h-3 draggable-header hover:bg-gradient-to-b dark:from-gray-500  from-gray-200 to-transparent"></div>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<MainPage />} />

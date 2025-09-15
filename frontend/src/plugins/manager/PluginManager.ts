@@ -8,6 +8,7 @@ import {
   PluginAPI
 } from '../types/index';
 import { pluginRegistry } from '../registry/PluginRegistry';
+import { useProjectStore } from '../../stores/useProjectStore';
 
 /**
  * 插件管理器实现
@@ -220,21 +221,18 @@ export class PluginManager implements IPluginManager {
     const api: PluginAPI = {
       // 文件操作
       file: {
-        getUrl: (relativePath: string, projectId?: number): string => {
-          const pid = projectId || 4; // 默认使用mybook项目
-          // 根据项目ID映射到正确的项目名称
-          const projectNameMap: Record<number, string> = {
-            2: 'test-project',
-            3: 'new-test-project', 
-            4: 'mybook'
-          };
-          const projectName = projectNameMap[pid] || 'mybook';
-          return `http://localhost:3001/data/${projectName}/${relativePath}`;
+        getUrl: (relativePath: string, _projectId?: number): string => {
+          // 获取当前项目信息
+          const currentProject = useProjectStore.getState().currentProject;
+          const projectPath = currentProject?.path || 'mybook';
+          return `${import.meta.env.VITE_RESOURCE_HOST||""}/data/${projectPath}/${relativePath}`;
         },
         
         updateFile: async (relativePath: string, content: ArrayBuffer | string, projectId?: number): Promise<boolean> => {
           try {
-            const pid = projectId || 4; // 默认使用mybook项目
+            // 获取当前项目信息
+            const currentProject = useProjectStore.getState().currentProject;
+            const pid = projectId || currentProject?.id || 4;
             
             // 首先需要获取文件信息来获取文件ID
             const response = await fetch(`/api/files?projectId=${pid}`, {
@@ -302,7 +300,9 @@ export class PluginManager implements IPluginManager {
          
          createFile: async (relativePath: string, content: ArrayBuffer | string, projectId?: number): Promise<boolean> => {
            try {
-             const pid = projectId || 4; // 默认使用mybook项目
+             // 获取当前项目信息
+             const currentProject = useProjectStore.getState().currentProject;
+             const pid = projectId || currentProject?.id || 4;
              
              let createResponse: Response;
              

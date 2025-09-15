@@ -62,7 +62,7 @@ function createWindow() {
 
 // 启动后端服务器
 function startBackendServer() {
-  const backendPath = join(__dirname, '../resources/backend/dist/index.js');
+  const backendPath = join(__dirname, '../resources/index.js');
   
   backendProcess = spawn('node', [backendPath], {
     stdio: 'inherit',

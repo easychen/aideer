@@ -9,6 +9,7 @@ import FileDetailModal from '../file-detail/FileDetailModal';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
 import CreateProjectDialog from '../dialogs/CreateProjectDialog';
 import EditProjectDialog from '../dialogs/EditProjectDialog';
+import ElectronOnly from '../ElectronOnly';
 
 interface FileNode {
   id: string;
@@ -326,6 +327,9 @@ const Sidebar = ({ refreshTrigger, onRefresh, onMinimize }: SidebarProps) => {
 
   return (
     <div className="h-full bg-card flex flex-col">
+      <ElectronOnly>
+        <div className="p-3 draggable-header"></div>
+      </ElectronOnly>
       {/* 项目选择器 */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center space-x-2">

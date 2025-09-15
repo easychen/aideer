@@ -5,6 +5,7 @@ import { apiService } from '../../services/api';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
 import PluginContainer from '../../plugins/components/PluginContainer';
 import { pluginManager } from '../../plugins/manager/PluginManager';
+import { useProjectStore } from '../../stores/useProjectStore';
 
 interface FileDetailModalProps {
   file: FileItem | null;
@@ -15,6 +16,7 @@ interface FileDetailModalProps {
 }
 
 const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalProps) => {
+  const { currentProject } = useProjectStore();
   const [leftWidth, setLeftWidth] = useState(30); // 左侧栏宽度百分比
   const [rightWidth, setRightWidth] = useState(25); // 右侧栏宽度百分比
   const [isRenaming, setIsRenaming] = useState(false);
@@ -72,7 +74,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
   };
 
   const fileType = getFileType(file.name);
-  const apiBaseUrl = 'http://localhost:3001';
+  const apiBaseUrl = import.meta.env.VITE_RESOURCE_HOST || '';
 
   const getFileIcon = () => {
     switch (fileType) {
@@ -95,7 +97,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
         return (
           <div className="w-full h-full bg-muted rounded-lg overflow-hidden flex items-center justify-center">
             <img
-              src={`${apiBaseUrl}/data/mybook/${file.relativePath}`}
+              src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`}
               alt={file.name}
               className="max-w-full max-h-full object-contain"
               onError={(e) => {
@@ -120,7 +122,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
               className="w-full max-w-md"
               preload="none"
             >
-              <source src={`${apiBaseUrl}/data/mybook/${file.relativePath}`} />
+              <source src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`} />
               您的浏览器不支持音频播放
             </audio>
           </div>
@@ -134,7 +136,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
               controls
               preload="metadata"
             >
-              <source src={`${apiBaseUrl}/data/mybook/${file.relativePath}`} />
+              <source src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`} />
               您的浏览器不支持视频播放
             </video>
           </div>

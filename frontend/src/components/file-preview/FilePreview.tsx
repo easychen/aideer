@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { FileText, Image, Music, Video, File, Play, Pause } from 'lucide-react';
 import { FileItem } from '../../types/index';
+import { useProjectStore } from '../../stores/useProjectStore';
 
 interface FilePreviewProps {
   file: FileItem;
@@ -9,6 +10,7 @@ interface FilePreviewProps {
 }
 
 const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
+  const { currentProject } = useProjectStore();
   // 从项目路径中提取项目名称
 
 
@@ -177,7 +179,7 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
   };
 
   const fileType = getFileType(file);
-  const apiBaseUrl = 'http://localhost:3001';
+  const apiBaseUrl = import.meta.env.VITE_RESOURCE_HOST || '';
 
   const renderPreview = () => {
     switch (fileType) {
@@ -192,7 +194,7 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
           >
             <img
               ref={imageRef}
-              src={`${apiBaseUrl}/data/mybook/${file.relativePath}`}
+              src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`}
               alt={file.name}
               className="w-full h-full object-cover transition-all duration-200"
               style={{
@@ -243,7 +245,7 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
               onEnded={handleAudioEnd}
               className="hidden"
             >
-              <source src={`${apiBaseUrl}/data/mybook/${file.relativePath}`} />
+              <source src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`} />
               您的浏览器不支持音频播放
             </audio>
             
@@ -275,7 +277,7 @@ const FilePreview = ({ file, className = '', onClick }: FilePreviewProps) => {
             {/* 隐藏的视频元素用于获取帧 */}
             <video
               ref={videoRef}
-              src={`${apiBaseUrl}/data/mybook/${file.relativePath}`}
+              src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`}
               className="hidden"
               onLoadedMetadata={handleVideoLoad}
               preload="metadata"
