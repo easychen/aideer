@@ -60,7 +60,7 @@
     "forge": {
       "packagerConfig": {
         "name": "AiDeer",
-        "executableName": "aideer",
+        "executableName": "AiDeer",
         "icon": "icon.icns",
         "extraResource": [
           "resources"
