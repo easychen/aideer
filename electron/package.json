@@ -1,23 +1,28 @@
 {
-  "name": "aideer-electron",
+  "name": "electron",
+  "productName": "electron",
   "version": "1.0.0",
-  "description": "AiDeer Electron Main Process",
-  "author": "AiDeer Team",
-  "type": "module",
+  "description": "My Electron application description",
   "main": "src/main.js",
+  "type":"module",
   "scripts": {
     "dev": "electron src/main.js",
     "build": "echo 'No build needed for JS files'",
     "start": "electron src/main.js",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on dist/main.js && electron dist/main.js\"",
     "build:all": "node build.cjs",
-    "dist": "electron-builder",
-    "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win",
-    "dist:linux": "electron-builder --linux",
+    "make": "electron-forge make",
+    "package": "electron-forge package",
+    "publish": "electron-forge publish",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix"
   },
+  "keywords": [],
+  "author": {
+    "name": "Easy",
+    "email": "easychen@qq.com"
+  },
+  "license": "MIT",
   "dependencies": {
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
@@ -38,61 +43,42 @@
     "@typescript-eslint/parser": "^6.15.0",
     "concurrently": "^8.2.2",
     "electron": "^28.3.3",
-    "electron-builder": "^24.9.1",
     "eslint": "^8.56.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.0",
-    "wait-on": "^7.2.0"
+    "wait-on": "^7.2.0",
+    "@electron-forge/cli": "^6.4.2",
+    "@electron-forge/maker-deb": "^6.4.2",
+    "@electron-forge/maker-rpm": "^6.4.2",
+    "@electron-forge/maker-squirrel": "^6.4.2",
+    "@electron-forge/maker-zip": "^6.4.2",
+    "@electron-forge/maker-dmg": "^6.4.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^6.4.2"
   },
-  "build": {
-    "appId": "com.aideer.app",
-    "productName": "AiDeer",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "dist/**/*",
-      "resources/**/*",
-      "package.json"
-    ],
-    "asarUnpack": [
-      "resources/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "resources",
-        "to": "resources",
-        "filter": ["**/*"]
-      }
-    ],
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["x64", "arm64"]
-        }
-      ]
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ]
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": ["x64"]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+  "config": {
+    "forge": {
+      "packagerConfig": {
+         "name": "AiDeer",
+         "executableName": "aideer",
+         "icon": "icon.icns",
+         "extraResource": [
+           "resources"
+         ]
+       },
+      "makers": [
+         {
+           "name": "@electron-forge/maker-zip",
+           "platforms": ["darwin"]
+         },
+         {
+           "name": "@electron-forge/maker-deb",
+           "config": {}
+         },
+         {
+           "name": "@electron-forge/maker-rpm",
+           "config": {}
+         }
+       ]
     }
   }
 }
