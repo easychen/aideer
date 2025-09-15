@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // 定义项目数据根目录
-const PROJECT_DATA_ROOT = path.resolve(__dirname, '../../data');
+const PROJECT_DATA_ROOT = process.env.AI_DEER_DATA_PATH  ? path.resolve(process.env.AI_DEER_DATA_PATH, 'data') : path.resolve(__dirname, '../../data');
 
 /**
  * 路径工具类

@@ -150,9 +150,7 @@ function createWindow() {
 async function startBackendServer() {
   // 修复环境变量
   const sENV = await shellEnv();
-  const PATH = sENV.PATH;
-  if (PATH) process.env.PATH = PATH;
-
+  
   const backendPath = join(__dirname, '../resources/index.js');
 
   // 日志文件路径
@@ -161,23 +159,21 @@ const LOG_FILE = '/tmp/deerlog.log';
 // 简单的日志函数
 function log(...args) {
   const msg = `[${new Date().toISOString()}] ${args.join(' ')}\n`;
-  fs.appendFileSync(LOG_FILE, msg);
+  // fs.appendFileSync(LOG_FILE, msg);
 }
   
   backendProcess = spawn(process.execPath, [backendPath], {
-    stdio: 'inherit',
-    env: { ...process.env, PORT: BACKEND_PORT, ELECTRON_RUN_AS_NODE: '1' }
-  });
-  
-  backendProcess.on('error', (error) => {
-    log('Failed to start backend server:', error);
-    console.error('Failed to start backend server:', error);
-  });
-  
-  backendProcess.on('exit', (code) => {
-    log(`Backend server exited with code ${code}`);
-    console.log(`Backend server exited with code ${code}`);
-  });
+  stdio: ['pipe','pipe','pipe'],
+  env: { ...sENV, ...process.env, PORT: BACKEND_PORT, ELECTRON_RUN_AS_NODE: '1', AI_DEER_DATA_PATH: join(app.getPath('appData'),'aideer') }
+});
+
+backendProcess.stdout.on('data', (data) => log('stdout:', data.toString()));
+backendProcess.stderr.on('data', (data) => log('stderr:', data.toString()));
+
+backendProcess.on('exit', (code) => {
+  log(`data dir ${join(app.getPath('appData'),'aideer')}`)
+  log(`Backend server exited with code ${code}`);
+});
 }
 
 // 当 Electron 完成初始化并准备创建浏览器窗口时调用此方法
@@ -207,9 +203,9 @@ app.on('window-all-closed', () => {
   
   // 在 macOS 上，除非用户用 Cmd + Q 确定地退出，
   // 否则绝大部分应用及其菜单栏会保持激活。
-  if (process.platform !== 'darwin') {
+  // if (process.platform !== 'darwin') {
     app.quit();
-  }
+  // }
 });
 
 // 应用退出前清理

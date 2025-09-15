@@ -1,8 +1,11 @@
 import sqlite3 from 'sqlite3';
-import path from 'path';
 import fs from 'fs-extra';
 import { CREATE_PROJECTS_TABLE, CREATE_INDEXES, ProjectModel } from '../models/index.js';
 import { Project, DatabaseConfig } from '../types/index.js';
+import path, { dirname } from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -11,7 +14,8 @@ export class DatabaseService {
   
   private constructor() {
     // 私有构造函数，实现单例模式
-    this.dbPath = path.join(process.cwd(), 'data', 'aideer.db');
+    const dataDir = path.join(__dirname, '..', '..', 'data');
+    this.dbPath = path.join(process.env.AI_DEER_DATA_PATH || dataDir, 'aideer.db');
   }
   
   public static getInstance(): DatabaseService {

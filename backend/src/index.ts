@@ -49,8 +49,8 @@ if(fs.existsSync(path.join(__dirname, './site'))) {
 }
 
 // 静态文件服务
-app.use('/thumbnails', express.static(path.join(__dirname, '../thumbnails')));
-app.use('/data', express.static(path.join(__dirname, '../data')));
+// app.use('/thumbnails', express.static(path.join(__dirname, '../thumbnails')));
+app.use('/data', express.static(process.env.AI_DEER_DATA_PATH ?  path.join( process.env.AI_DEER_DATA_PATH, 'data' ) : path.join(__dirname, '../data')));
 
 // API 路由
 app.use('/api/projects', projectRoutes);
