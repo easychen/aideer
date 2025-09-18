@@ -29,7 +29,7 @@ interface CharacterCardPluginState {
  * CharacterCard插件组件
  * 用于显示PNG文件中的角色卡片信息
  */
-export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, projectId, api }) => {
+export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, projectId, api, onShouldHide }) => {
   const [state, setState] = useState<CharacterCardPluginState>({
     loading: true,
     error: null,
@@ -79,6 +79,8 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
       const characterData = await PngProcessor.extractCharacterData(arrayBuffer);
       
       if (!characterData) {
+        // 当PNG文件中未找到角色卡片数据时，请求隐藏tab
+        onShouldHide?.(true, 'PNG文件中未找到角色卡片数据');
         throw new Error('PNG文件中未找到角色卡片数据');
       }
 
@@ -88,6 +90,9 @@ export const CharacterCardPlugin: React.FC<PluginComponentProps> = ({ file, proj
         error: null,
         characterData
       }));
+      
+      // 成功加载角色数据时，确保tab是可见的
+      onShouldHide?.(false);
     } catch (error) {
       console.error('加载角色数据失败:', error);
       setState(prev => ({

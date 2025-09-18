@@ -97,12 +97,15 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
   const [activePluginId, setActivePluginId] = useState<string | null>(null);
   const [pluginErrors, setPluginErrors] = useState<Map<string, Error>>(new Map());
   const [loadingPlugins, setLoadingPlugins] = useState<Set<string>>(new Set());
+  const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(new Set());
 
   // 获取支持当前文件类型的插件
   const enabledPlugins = useMemo(() => {
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
-    return pluginManager.getPluginsForExtension(fileExtension);
-  }, [file.name]);
+    const plugins = pluginManager.getPluginsForExtension(fileExtension);
+    // 过滤掉被隐藏的插件
+    return plugins.filter(plugin => !hiddenPlugins.has(plugin.metadata.id));
+  }, [file.name, hiddenPlugins]);
 
   // 初始化活动插件
   useEffect(() => {
@@ -118,6 +121,38 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
       onPluginChange?.(null);
     }
   }, [enabledPlugins, defaultActivePlugin, onPluginChange]);
+
+  // 处理插件隐藏请求
+  const handlePluginShouldHide = useCallback((pluginId: string, shouldHide: boolean, reason?: string) => {
+    console.log(`插件 ${pluginId} 请求${shouldHide ? '隐藏' : '显示'} tab${reason ? `, 原因: ${reason}` : ''}`);
+    
+    setHiddenPlugins(prev => {
+      const newSet = new Set(prev);
+      if (shouldHide) {
+        newSet.add(pluginId);
+      } else {
+        newSet.delete(pluginId);
+      }
+      return newSet;
+    });
+
+    // 如果当前活动的插件被隐藏，切换到第一个可用插件
+    if (shouldHide && activePluginId === pluginId) {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+      const allPlugins = pluginManager.getPluginsForExtension(fileExtension);
+      const visiblePlugins = allPlugins.filter(plugin => 
+        plugin.metadata.id !== pluginId && !hiddenPlugins.has(plugin.metadata.id)
+      );
+      
+      if (visiblePlugins.length > 0) {
+        setActivePluginId(visiblePlugins[0].metadata.id);
+        onPluginChange?.(visiblePlugins[0].metadata.id);
+      } else {
+        setActivePluginId(null);
+        onPluginChange?.(null);
+      }
+    }
+  }, [activePluginId, file.name, hiddenPlugins, onPluginChange]);
 
   // 处理插件切换
   const handlePluginChange = (pluginId: string) => {
@@ -190,6 +225,7 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
             onError={(error) => handlePluginError(activePlugin.metadata.id, error)}
             onLoadStart={() => handlePluginLoadStart(activePlugin.metadata.id)}
             onLoadEnd={() => handlePluginLoadEnd(activePlugin.metadata.id)}
+            onShouldHide={(shouldHide, reason) => handlePluginShouldHide(activePlugin.metadata.id, shouldHide, reason)}
           />
         )}
       </div>
@@ -209,6 +245,7 @@ interface PluginContentWrapperProps {
   onError: (error: Error) => void;
   onLoadStart: () => void;
   onLoadEnd: () => void;
+  onShouldHide: (shouldHide: boolean, reason?: string) => void;
 }
 
 const PluginContentWrapper: React.FC<PluginContentWrapperProps> = ({
@@ -219,7 +256,8 @@ const PluginContentWrapper: React.FC<PluginContentWrapperProps> = ({
   error,
   onError,
   onLoadStart,
-  onLoadEnd
+  onLoadEnd,
+  onShouldHide
 }) => {
   const [api] = useState(() => pluginManager.createPluginAPI(plugin.metadata.id));
 
@@ -253,6 +291,7 @@ const PluginContentWrapper: React.FC<PluginContentWrapperProps> = ({
           projectId={projectId}
           api={api}
           onError={onError}
+          onShouldHide={onShouldHide}
         />
       </div>
     );

@@ -37,6 +37,8 @@ export interface PluginComponentProps {
   onError?: (error: Error) => void;
   /** 插件API接口 */
   api?: PluginAPI;
+  /** 插件隐藏回调 - 插件可以调用此函数来请求隐藏自己的tab */
+  onShouldHide?: (shouldHide: boolean, reason?: string) => void;
 }
 
 /**
