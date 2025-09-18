@@ -166,9 +166,13 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
   };
 
   const handleDownload = () => {
+    const currentProject = useProjectStore.getState().currentProject;
+    const downloadUrl = `${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`;
     const link = document.createElement('a');
-    link.href = `${apiBaseUrl}/api/files/${file.id}/content`;
+    link.href = downloadUrl;
     link.download = file.name;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
