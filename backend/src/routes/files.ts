@@ -889,4 +889,421 @@ router.put('/batch/move', async (req, res) => {
   }
 });
 
+// 从网页导入媒体文件接口
+// 导入单个媒体文件（二进制数据）
+router.post('/import-media-binary', upload.single('file'), async (req, res) => {
+  try {
+    const { source, width, height, directory = 'inbox', filenamePrefix = '' } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file provided'
+      } as ApiResponse);
+    }
+
+    // 解析目录路径，第一部分是项目路径，后续部分是目录结构
+    const pathParts = directory.split('/').filter((part: string) => part.length > 0);
+    let projectPath = 'good'; // 默认项目
+    let targetDirectory = 'inbox'; // 默认目录
+    
+    if (pathParts.length > 0) {
+      projectPath = pathParts[0];
+      if (pathParts.length > 1) {
+        targetDirectory = pathParts.slice(1).join('/');
+      } else {
+        targetDirectory = ''; // 如果只有项目路径，保存到项目根目录
+      }
+    }
+
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    let project = projects.find(p => p.name === projectPath || p.path.endsWith(projectPath));
+    
+    if (!project) {
+      // 如果项目不存在，使用默认项目
+      project = projects[0];
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'No projects found. Please create a project first.'
+        } as ApiResponse);
+      }
+    }
+    
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const targetDir = targetDirectory ? path.join(projectAbsolutePath, targetDirectory) : projectAbsolutePath;
+    
+    // 确保目标目录存在
+    await fs.ensureDir(targetDir);
+    
+    // 生成文件名
+    let filename = req.file.originalname || 'media_file';
+    
+    // 添加前缀
+    if (filenamePrefix) {
+      const ext = path.extname(filename);
+      const nameWithoutExt = path.basename(filename, ext);
+      filename = `${filenamePrefix}_${nameWithoutExt}${ext}`;
+    }
+    
+    // 如果没有扩展名，根据MIME类型添加
+    if (!path.extname(filename)) {
+      const ext = mimeTypes.extension(req.file.mimetype);
+      if (ext) {
+        filename += `.${ext}`;
+      }
+    }
+    
+    // 构建完整路径
+    let relativePath = path.join(directory, filename);
+    let fullPath = path.join(targetDir, filename);
+    
+    // 检查文件是否已存在，如果存在则自动添加数字后缀
+    let counter = 1;
+    const fileExtension = path.extname(filename);
+    const fileNameWithoutExt = path.basename(filename, fileExtension);
+    
+    while (await fs.pathExists(fullPath)) {
+      const newFileName = `${fileNameWithoutExt}(${counter})${fileExtension}`;
+      relativePath = path.join(directory, newFileName);
+      fullPath = path.join(targetDir, newFileName);
+      counter++;
+    }
+    
+    // 写入文件
+    await fs.writeFile(fullPath, req.file.buffer);
+    
+    // 获取文件信息
+    const fileStats = await fs.stat(fullPath);
+    const mimeType = mimeTypes.lookup(fullPath) || undefined;
+    
+    const fileItem: FileItem = {
+      id: generateFileId(fullPath),
+      projectId: project.id,
+      name: path.basename(fullPath),
+      path: fullPath,
+      relativePath: relativePath,
+      size: fileStats.size,
+      type: 'file',
+      mimeType: mimeType,
+      extension: path.extname(fullPath).slice(1) || undefined,
+      createdAt: fileStats.birthtime.toISOString(),
+      updatedAt: fileStats.mtime.toISOString(),
+      lastModified: fileStats.mtime.toISOString(),
+      thumbnailPath: undefined
+    };
+    
+    return res.json({
+      success: true,
+      data: {
+        imported: 1,
+        file: fileItem,
+        directory: directory,
+        metadata: {
+          width: width ? parseInt(width) : undefined,
+          height: height ? parseInt(height) : undefined,
+          source: source
+        }
+      },
+      message: 'Successfully imported media file'
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error importing media file:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to import media file'
+    } as ApiResponse);
+  }
+});
+
+// 批量导入媒体文件（二进制数据）
+router.post('/import-media-batch', upload.array('files'), async (req, res) => {
+  try {
+    const { source, directory = 'inbox', filenamePrefix = '' } = req.body;
+    
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No files provided'
+      } as ApiResponse);
+    }
+
+    // 解析目录路径，第一部分是项目路径，后续部分是目录结构
+    const pathParts = directory.split('/').filter((part: string) => part.length > 0);
+    let projectPath = 'good'; // 默认项目
+    let targetDirectory = 'inbox'; // 默认目录
+    
+    if (pathParts.length > 0) {
+      projectPath = pathParts[0];
+      if (pathParts.length > 1) {
+        targetDirectory = pathParts.slice(1).join('/');
+      } else {
+        targetDirectory = ''; // 如果只有项目路径，保存到项目根目录
+      }
+    }
+
+    // 获取项目信息
+    const projects = await dbService.getProjects();
+    let project = projects.find(p => p.name === projectPath || p.path.endsWith(projectPath));
+    
+    if (!project) {
+      // 如果项目不存在，使用默认项目
+      project = projects[0];
+      if (!project) {
+        return res.status(404).json({
+          success: false,
+          error: 'No projects found. Please create a project first.'
+        } as ApiResponse);
+      }
+    }
+    
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const targetDir = targetDirectory ? path.join(projectAbsolutePath, targetDirectory) : projectAbsolutePath;
+    
+    // 确保目标目录存在
+    await fs.ensureDir(targetDir);
+    
+    const importedFiles: FileItem[] = [];
+    const errors: string[] = [];
+    
+    for (let i = 0; i < req.files.length; i++) {
+      try {
+        const file = req.files[i];
+        
+        // 生成文件名
+        let filename = file.originalname || `media_file_${i + 1}`;
+        
+        // 添加前缀
+        if (filenamePrefix) {
+          const ext = path.extname(filename);
+          const nameWithoutExt = path.basename(filename, ext);
+          filename = `${filenamePrefix}_${nameWithoutExt}${ext}`;
+        }
+        
+        // 如果没有扩展名，根据MIME类型添加
+        if (!path.extname(filename)) {
+          const ext = mimeTypes.extension(file.mimetype);
+          if (ext) {
+            filename += `.${ext}`;
+          }
+        }
+        
+        // 构建完整路径
+        let relativePath = path.join(directory, filename);
+        let fullPath = path.join(targetDir, filename);
+        
+        // 检查文件是否已存在，如果存在则自动添加数字后缀
+        let counter = 1;
+        const fileExtension = path.extname(filename);
+        const fileNameWithoutExt = path.basename(filename, fileExtension);
+        
+        while (await fs.pathExists(fullPath)) {
+          const newFileName = `${fileNameWithoutExt}(${counter})${fileExtension}`;
+          relativePath = path.join(directory, newFileName);
+          fullPath = path.join(targetDir, newFileName);
+          counter++;
+        }
+        
+        // 写入文件
+        await fs.writeFile(fullPath, file.buffer);
+        
+        // 获取文件信息
+        const fileStats = await fs.stat(fullPath);
+        const mimeType = mimeTypes.lookup(fullPath) || undefined;
+        
+        const fileItem: FileItem = {
+          id: generateFileId(fullPath),
+          projectId: project.id,
+          name: path.basename(fullPath),
+          path: fullPath,
+          relativePath: relativePath,
+          size: fileStats.size,
+          type: 'file',
+          mimeType: mimeType,
+          extension: path.extname(fullPath).slice(1) || undefined,
+          createdAt: fileStats.birthtime.toISOString(),
+          updatedAt: fileStats.mtime.toISOString(),
+          lastModified: fileStats.mtime.toISOString(),
+          thumbnailPath: undefined
+        };
+        
+        importedFiles.push(fileItem);
+        
+      } catch (error) {
+        console.error(`Error importing file ${i}:`, error);
+        errors.push(`Failed to import file ${i}: ${error.message}`);
+      }
+    }
+    
+    return res.json({
+      success: true,
+      data: {
+        imported: importedFiles.length,
+        files: importedFiles,
+        errors: errors,
+        directory: directory,
+        source: source
+      },
+      message: `Successfully imported ${importedFiles.length} files${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error importing media files:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to import media files'
+    } as ApiResponse);
+  }
+});
+
+router.post('/import-media', async (req, res) => {
+  try {
+    const { urls, mediaItems, directory = 'inbox', filenamePrefix = '', pageTitle, pageUrl, source } = req.body;
+    
+    // 支持两种格式：urls数组（旧格式）或mediaItems数组（新格式）
+    let urlsToProcess: string[] = [];
+    
+    if (mediaItems && Array.isArray(mediaItems) && mediaItems.length > 0) {
+      // 新格式：从mediaItems中提取src作为URL
+      urlsToProcess = mediaItems.map((item: any) => item.src);
+    } else if (urls && Array.isArray(urls) && urls.length > 0) {
+      // 旧格式：直接使用urls数组
+      urlsToProcess = urls;
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Either URLs array or mediaItems array is required'
+      } as ApiResponse);
+    }
+
+    // 获取默认项目（假设第一个项目为默认项目）
+    const projects = await dbService.getProjects();
+    if (projects.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No projects found. Please create a project first.'
+      } as ApiResponse);
+    }
+    
+    const project = projects[0]; // 使用第一个项目作为默认项目
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const targetDir = path.join(projectAbsolutePath, directory);
+    
+    // 确保目标目录存在
+    await fs.ensureDir(targetDir);
+    
+    const importedFiles: FileItem[] = [];
+    const errors: string[] = [];
+    
+    for (let i = 0; i < urlsToProcess.length; i++) {
+      try {
+        const url = urlsToProcess[i];
+        
+        // 从URL下载文件
+        const response = await fetch(url);
+        if (!response.ok) {
+          errors.push(`Failed to download ${url}: ${response.statusText}`);
+          continue;
+        }
+        
+        const buffer = Buffer.from(await response.arrayBuffer());
+        
+        // 生成文件名
+        let filename = '';
+        const urlPath = new URL(url).pathname;
+        const originalName = path.basename(urlPath) || `media_${i + 1}`;
+        
+        // 添加前缀
+        if (filenamePrefix) {
+          const ext = path.extname(originalName);
+          const nameWithoutExt = path.basename(originalName, ext);
+          filename = `${filenamePrefix}_${nameWithoutExt}${ext}`;
+        } else {
+          filename = originalName;
+        }
+        
+        // 如果没有扩展名，根据Content-Type添加
+        if (!path.extname(filename)) {
+          const contentType = response.headers.get('content-type');
+          if (contentType) {
+            const ext = mimeTypes.extension(contentType);
+            if (ext) {
+              filename += `.${ext}`;
+            }
+          }
+        }
+        
+        // 构建完整路径
+        let relativePath = path.join(directory, filename);
+        let fullPath = path.join(targetDir, filename);
+        
+        // 检查文件是否已存在，如果存在则自动添加数字后缀
+        let counter = 1;
+        const fileExtension = path.extname(filename);
+        const fileNameWithoutExt = path.basename(filename, fileExtension);
+        
+        while (await fs.pathExists(fullPath)) {
+          const newFileName = `${fileNameWithoutExt}(${counter})${fileExtension}`;
+          relativePath = path.join(directory, newFileName);
+          fullPath = path.join(targetDir, newFileName);
+          counter++;
+        }
+        
+        // 写入文件
+        await fs.writeFile(fullPath, buffer);
+        
+        // 获取文件信息
+        const fileStats = await fs.stat(fullPath);
+        const mimeType = mimeTypes.lookup(fullPath) || undefined;
+        
+        const fileItem: FileItem = {
+          id: generateFileId(fullPath),
+          projectId: project.id,
+          name: path.basename(fullPath),
+          path: fullPath,
+          relativePath: relativePath,
+          size: fileStats.size,
+          type: 'file',
+          mimeType: mimeType,
+          extension: path.extname(fullPath).slice(1) || undefined,
+          createdAt: fileStats.birthtime.toISOString(),
+          updatedAt: fileStats.mtime.toISOString(),
+          lastModified: fileStats.mtime.toISOString(),
+          thumbnailPath: undefined
+        };
+        
+        importedFiles.push(fileItem);
+        
+      } catch (error) {
+        console.error(`Error importing ${urlsToProcess[i]}:`, error);
+        errors.push(`Failed to import ${urlsToProcess[i]}: ${error.message}`);
+      }
+    }
+    
+    return res.json({
+      success: true,
+      data: {
+        imported: importedFiles.length,
+        files: importedFiles,
+        errors: errors,
+        directory: directory,
+        pageInfo: {
+          title: pageTitle,
+          url: pageUrl || source
+        }
+      },
+      message: `Successfully imported ${importedFiles.length} files${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
+    } as ApiResponse);
+    
+  } catch (error) {
+    console.error('Error importing media files:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to import media files'
+    } as ApiResponse);
+  }
+});
+
 export default router;

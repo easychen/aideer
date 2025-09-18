@@ -1,0 +1,20 @@
+{
+  "name": "browser-extension",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "批量收集网页图片和视频到系统的浏览器插件",
+  "dependencies": {
+    "@types/chrome": "^0.1.12",
+    "typescript": "^5.9.2",
+    "wxt": "^0.20.11"
+  }
+}
