@@ -1,8 +1,8 @@
 {
-  "name": "electron",
-  "productName": "electron",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "name": "aideer",
+  "productName": "AiDeer",
+  "version": "1.0.1",
+  "description": "AI assets manage tool",
   "main": "src/main.js",
   "type": "module",
   "scripts": {
