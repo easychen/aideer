@@ -10,7 +10,7 @@ export default defineBackground(() => {
         // 批量收集媒体文件菜单
         chrome.contextMenus.create({
           id: 'aideer-collect-media',
-          title: '收集页面媒体文件',
+          title: '收集页面图片',
           contexts: ['page']
         });
 
@@ -18,7 +18,7 @@ export default defineBackground(() => {
         chrome.contextMenus.create({
           id: 'aideer-save-single-media',
           title: '保存到 AiDeer',
-          contexts: ['image', 'video']
+          contexts: ['image']
         });
       });
 

@@ -8,6 +8,7 @@ import { DatabaseService } from '../services/database.js';
 import { FileSystemService } from '../services/filesystem.js';
 import { ApiResponse, FileItem, FileQueryParams } from '../types/index.js';
 import { PathUtils } from '../utils/pathUtils.js';
+import { ImageMetadataProcessor } from '../utils/imageMetadata.js';
 
 const router: express.Router = express.Router();
 const dbService = DatabaseService.getInstance();
@@ -971,8 +972,19 @@ router.post('/import-media-binary', upload.single('file'), async (req, res) => {
       counter++;
     }
     
+    // 处理图片元数据（如果是图片文件且有source URL）
+    let finalBuffer = req.file.buffer;
+    if (source && (req.file.mimetype?.startsWith('image/png') || req.file.mimetype?.startsWith('image/jpeg'))) {
+      try {
+        finalBuffer = await ImageMetadataProcessor.addSourceUrlMetadata(req.file.buffer, source, req.file.mimetype);
+      } catch (error) {
+        console.warn('Failed to add metadata to image:', error);
+        // 如果元数据写入失败，仍然保存原始文件
+      }
+    }
+    
     // 写入文件
-    await fs.writeFile(fullPath, req.file.buffer);
+    await fs.writeFile(fullPath, finalBuffer);
     
     // 获取文件信息
     const fileStats = await fs.stat(fullPath);

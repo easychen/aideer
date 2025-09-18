@@ -39,7 +39,7 @@ const JsonNode: React.FC<JsonNodeProps> = ({ data, keyName, level = 0, onCopy })
     const type = getValueType(value);
     switch (type) {
       case 'string':
-        return value.length > 50 ? `"${value.substring(0, 50)}..."` : `"${value}"`;
+        return value.length > 500 ? `"${value.substring(0, 500)}..."` : `"${value}"`;
       case 'number':
       case 'boolean':
       case 'null':

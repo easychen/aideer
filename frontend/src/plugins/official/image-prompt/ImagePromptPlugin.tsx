@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Image, MessageSquare, Settings, X, FileText, Zap, History, Hash, Copy, Download, Eye, EyeOff } from 'lucide-react';
 import { PngPromptProcessor, PromptData } from './utils/pngPromptProcessor';
+import { JpegPromptProcessor } from './utils/jpegPromptProcessor';
 import JsonTreeViewer from './components/JsonTreeViewer';
 import type { PluginComponentProps } from '../../types';
 
@@ -12,7 +13,7 @@ const PLUGIN_CONFIG = {
   DESCRIPTION: '显示PNG文件中的AI生成提示词信息',
   VERSION: '1.0.0',
   AUTHOR: 'Aideer Team',
-  SUPPORTED_EXTENSIONS: ['.png'],
+  SUPPORTED_EXTENSIONS: ['.png', '.jpg', '.jpeg'],
   CATEGORY: 'viewer'
 };
 
@@ -48,8 +49,12 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       // 检查文件类型
-      if (!file.name.toLowerCase().endsWith('.png')) {
-        throw new Error('此插件仅支持PNG文件');
+      const fileName = file.name.toLowerCase();
+      const isPng = fileName.endsWith('.png');
+      const isJpeg = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
+      
+      if (!isPng && !isJpeg) {
+        throw new Error('此插件仅支持PNG和JPEG文件');
       }
 
       // 使用API获取正确的文件URL
@@ -70,18 +75,46 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
         throw new Error('无法读取文件内容');
       }
       
-      // 验证PNG文件
-      if (!PngPromptProcessor.isValidPng(arrayBuffer)) {
-        throw new Error('无效的PNG文件格式');
-      }
+      let promptData: PromptData | null = null;
+      
+      if (isPng) {
+        // 验证PNG文件
+        if (!PngPromptProcessor.isValidPng(arrayBuffer)) {
+          throw new Error('无效的PNG文件格式');
+        }
 
-      // 提取提示词数据
-      const promptData = await PngPromptProcessor.extractPromptData(arrayBuffer);
+        // 提取PNG提示词数据
+        promptData = await PngPromptProcessor.extractPromptData(arrayBuffer);
+      } else if (isJpeg) {
+        // 提取JPEG元数据
+        const jpegMetadata = await JpegPromptProcessor.extractMetadata(arrayBuffer);
+        if (jpegMetadata) {
+          // 将JPEG元数据转换为PromptData格式
+          promptData = {
+            raw_data: jpegMetadata,
+            ...jpegMetadata
+          } as PromptData;
+        }
+      }
       
       if (!promptData) {
-        // 当PNG文件中未找到提示词数据时，请求隐藏tab
-        onShouldHide?.(true, 'PNG文件中未找到提示词数据');
-        throw new Error('PNG文件中未找到提示词数据');
+        // 当文件中未找到提示词数据时，请求隐藏tab
+        onShouldHide?.(true, '文件中未找到提示词数据');
+        throw new Error('文件中未找到提示词数据');
+      }
+
+      // 检查是否有任何有用的数据（包括source_url）
+      const hasUsefulData = promptData.prompt || 
+                           promptData.negative_prompt || 
+                           promptData.workflow || 
+                           promptData.parameters || 
+                           promptData.source_url ||
+                           (promptData.raw_data && Object.keys(promptData.raw_data).length > 0);
+
+      if (!hasUsefulData) {
+        // 当没有任何有用数据时，请求隐藏tab
+        onShouldHide?.(true, '文件中未找到有用的元数据');
+        throw new Error('文件中未找到有用的元数据');
       }
 
       setState(prev => ({
@@ -91,7 +124,7 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
         promptData
       }));
       
-      // 成功加载提示词数据时，确保tab是可见的
+      // 成功加载数据时，确保tab是可见的
       onShouldHide?.(false);
     } catch (error) {
       console.error('加载提示词数据失败:', error);
@@ -187,7 +220,7 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
     const parameters: any = {};
     const paramFields = [
       'steps', 'sampler', 'cfg_scale', 'seed', 'size', 'width', 'height',
-      'model', 'model_hash', 'denoising_strength', 'clip_skip', 'software'
+      'model', 'model_hash', 'denoising_strength', 'clip_skip', 'software', 'source_url'
     ];
     
     paramFields.forEach(field => {
@@ -483,6 +516,58 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
     );
   };
 
+  const renderSourceUrlSection = () => {
+    if (!state.promptData?.source_url) return null;
+
+    const isExpanded = state.expandedSections.has('source_url');
+    
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg">
+        <button
+          onClick={() => toggleSection('source_url')}
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
+        >
+          <div className="flex items-center">
+            <Hash className="h-5 w-5 text-blue-500 mr-2" />
+            <span className="font-medium">图片来源</span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-sm text-gray-500 mr-2">
+              {state.promptData.source_url.length > 500 
+                ? `${state.promptData.source_url.substring(0, 500)}...` 
+                : state.promptData.source_url}
+            </span>
+            {isExpanded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </div>
+        </button>
+        
+        {isExpanded && (
+          <div className="px-4 pb-4 border-t border-gray-100">
+            <div className="bg-gray-50 p-3 rounded text-sm font-mono break-all">
+              <a 
+                href={state.promptData.source_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                {state.promptData.source_url}
+              </a>
+            </div>
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={() => copyToClipboard(state.promptData!.source_url!)}
+                className="flex items-center px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+              >
+                <Copy className="h-3 w-3 mr-1" />
+                复制链接
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderActions = () => (
     <div className="flex items-center justify-between p-3 bg-gray-50 border-t border-gray-200">
       <div className="flex items-center space-x-2">
@@ -515,7 +600,7 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
           <Download className="h-3 w-3 mr-1" />
           下载文本
         </button>
-     </div>
+      </div>
     </div>
   );
 
@@ -548,6 +633,7 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
             </div>
           ) : (
             <div className="space-y-4">
+              {renderSourceUrlSection()}
               {renderPromptSection()}
               {renderNegativePromptSection()}
               {renderParametersSection()}

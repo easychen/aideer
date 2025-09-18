@@ -32,6 +32,9 @@ export interface PromptData {
   description?: string;
   user_comment?: any;
   
+  // 源URL信息
+  source_url?: string;
+  
   // 原始数据
   raw_data?: Record<string, any>;
   
@@ -90,6 +93,9 @@ export class PngPromptProcessor {
           }
         } else if (result.keyword === 'Software') {
           promptData.software = result.data;
+        } else if (result.keyword === 'source_url') {
+          // 网页源URL
+          promptData.source_url = result.data;
         } else if (result.keyword === 'XML:com.adobe.xmp') {
           // XMP 元数据
           const xmpData = this.parseXMPData(result.data);
@@ -106,6 +112,10 @@ export class PngPromptProcessor {
       const hasValidData = this.isValidPromptData(promptData);
       if (!hasValidData) {
         console.warn('未找到有效的提示词数据');
+        // 如果没有提示词数据，但有其他有用的元数据（如source_url），仍然返回数据
+        if (promptData.source_url || (promptData.raw_data && Object.keys(promptData.raw_data).length > 0)) {
+          return promptData;
+        }
         return null;
       }
 
@@ -627,6 +637,11 @@ export class PngPromptProcessor {
       return true;
     }
     
+    // 检查是否有source_url（网页来源）
+    if (promptData.source_url && promptData.source_url.trim()) {
+      return true;
+    }
+    
     // 检查原始数据是否包含有意义的内容
     if (promptData.raw_data && Object.keys(promptData.raw_data).length > 0) {
       // 过滤掉一些无意义的元数据
@@ -636,6 +651,9 @@ export class PngPromptProcessor {
         
         // 跳过空值或无意义的键
         if (!value || value === '' || value === 'Unknown') return false;
+        
+        // source_url 是有意义的元数据
+        if (keyLower === 'source_url') return true;
         
         // 跳过一些技术性的元数据
         if (keyLower.includes('timestamp') || keyLower.includes('date') || 
