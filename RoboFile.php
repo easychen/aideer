@@ -47,6 +47,6 @@ class RoboFile extends \Robo\Tasks
         $this->_exec('cp -r ./frontend/dist ./electron/resources/site');
 
         // 构建 node_modules 依赖
-        $this->_exec('cd ./electron/resources && npm install');
+        $this->_exec('cd ./electron/resources && npm install && cd && npm run package');
     }
 }
