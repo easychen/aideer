@@ -183,7 +183,7 @@ app.whenReady().then(async () => {
   // 等待后端服务器启动后再创建窗口
   setTimeout(() => {
     createWindow();
-  }, 2000);
+  }, 1000);
 
   app.on('activate', () => {
     // 在 macOS 上，当点击 dock 图标并且没有其他窗口打开时，

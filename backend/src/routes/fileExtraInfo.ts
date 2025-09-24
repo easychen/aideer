@@ -61,9 +61,11 @@ router.get('/:filePath(*)', async (req: Request, res: Response) => {
     }
 
     res.json(fileExtraInfo);
+    return;
   } catch (error) {
     console.error('获取文件额外信息失败:', error);
     res.status(500).json({ error: '获取文件额外信息失败' });
+    return;
   }
 });
 
@@ -120,9 +122,11 @@ router.put('/:filePath(*)', async (req: Request, res: Response) => {
     }
 
     res.json(fileExtraInfo);
+    return;
   } catch (error) {
     console.error('更新文件额外信息失败:', error);
     res.status(500).json({ error: '更新文件额外信息失败' });
+    return;
   }
 });
 
@@ -166,9 +170,11 @@ router.delete('/:filePath(*)', async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, message: '文件额外信息已删除' });
+    return;
   } catch (error) {
     console.error('删除文件额外信息失败:', error);
     res.status(500).json({ error: '删除文件额外信息失败' });
+    return;
   }
 });
 
@@ -252,9 +258,11 @@ router.post('/sync-paths', async (req: Request, res: Response) => {
       errorCount,
       errors: errors.slice(0, 10) // 只返回前10个错误
     });
+    return;
   } catch (error) {
     console.error('同步文件路径失败:', error);
     res.status(500).json({ error: '同步文件路径失败' });
+    return;
   }
 });
 
