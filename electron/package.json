@@ -1,7 +1,7 @@
 {
   "name": "aideer",
   "productName": "AiDeer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI assets manage tool",
   "main": "src/main.js",
   "type": "module",

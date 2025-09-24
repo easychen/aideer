@@ -40,9 +40,17 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
     activeTab: 'structured'
   });
 
+  // 添加文件路径缓存，避免重复处理同一文件
+  const [lastProcessedFile, setLastProcessedFile] = useState<string | null>(null);
+
   useEffect(() => {
-    loadPromptData();
-  }, [file]);
+    const currentFilePath = file?.relativePath || '';
+    // 只有当文件路径发生变化时才重新加载
+    if (currentFilePath && currentFilePath !== lastProcessedFile) {
+      setLastProcessedFile(currentFilePath);
+      loadPromptData();
+    }
+  }, [file?.relativePath]);
 
   const loadPromptData = async () => {
     try {

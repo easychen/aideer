@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Download, FileText, Image, Music, Video, File, MessageCircle, Edit, Trash2 } from 'lucide-react';
+import { X, Download, FileText, Image, Music, Video, File, Edit, Trash2 } from 'lucide-react';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
@@ -392,7 +392,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
           
           {/* 中间栏 - 插件系统 - 仅在有插件时显示 */}
           {hasAvailablePlugins && (
-            <div className="flex-1 flex flex-col border-r border-border">
+            <div className="flex-1 flex flex-col border-r border-border break-words break-all">
               <PluginContainer
                 file={file}
                 projectId={projectId}

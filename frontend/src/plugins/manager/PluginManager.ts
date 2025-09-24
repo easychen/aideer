@@ -9,7 +9,6 @@ import {
 } from '../types/index';
 import { pluginRegistry } from '../registry/PluginRegistry';
 import { useProjectStore } from '../../stores/useProjectStore';
-import apiService from '../../services/api';
 
 /**
  * 插件管理器实现

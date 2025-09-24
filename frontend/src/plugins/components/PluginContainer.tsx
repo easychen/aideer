@@ -120,7 +120,7 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
       setActivePluginId(null);
       onPluginChange?.(null);
     }
-  }, [enabledPlugins, defaultActivePlugin, onPluginChange]);
+  }, [enabledPlugins, defaultActivePlugin]);
 
   // 处理插件隐藏请求
   const handlePluginShouldHide = useCallback((pluginId: string, shouldHide: boolean, reason?: string) => {
@@ -128,12 +128,19 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
     
     setHiddenPlugins(prev => {
       const newSet = new Set(prev);
-      if (shouldHide) {
+      const wasHidden = newSet.has(pluginId);
+      
+      // 只有状态真正发生变化时才更新
+      if (shouldHide && !wasHidden) {
         newSet.add(pluginId);
-      } else {
+        return newSet;
+      } else if (!shouldHide && wasHidden) {
         newSet.delete(pluginId);
+        return newSet;
       }
-      return newSet;
+      
+      // 状态没有变化，返回原来的Set
+      return prev;
     });
 
     // 如果当前活动的插件被隐藏，切换到第一个可用插件
@@ -152,7 +159,7 @@ const PluginContainer: React.FC<PluginContainerProps> = ({
         onPluginChange?.(null);
       }
     }
-  }, [activePluginId, file.name, hiddenPlugins, onPluginChange]);
+  }, [activePluginId, file.name, hiddenPlugins]);
 
   // 处理插件切换
   const handlePluginChange = (pluginId: string) => {
@@ -260,16 +267,20 @@ const PluginContentWrapper: React.FC<PluginContentWrapperProps> = ({
   onShouldHide
 }) => {
   const [api] = useState(() => pluginManager.createPluginAPI(plugin.metadata.id));
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    onLoadStart();
-    // 模拟插件加载时间
-    const timer = setTimeout(() => {
-      onLoadEnd();
-    }, 100);
+    if (!isInitialized) {
+      onLoadStart();
+      // 模拟插件加载时间
+      const timer = setTimeout(() => {
+        onLoadEnd();
+        setIsInitialized(true);
+      }, 100);
 
-    return () => clearTimeout(timer);
-  }, [plugin.metadata.id]);
+      return () => clearTimeout(timer);
+    }
+  }, [plugin.metadata.id, isInitialized]);
 
   // 如果有错误，显示错误信息
   if (error) {
