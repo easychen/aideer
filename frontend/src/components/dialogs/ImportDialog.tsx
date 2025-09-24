@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, File, Folder, AlertCircle } from 'lucide-react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { apiService } from '../../services/api';
@@ -8,6 +8,7 @@ interface ImportDialogProps {
   onClose: () => void;
   currentPath: string;
   onImportComplete: () => void;
+  initialFiles?: File[];
 }
 
 interface FileItem {
@@ -22,13 +23,34 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   isOpen,
   onClose,
   currentPath,
-  onImportComplete
+  onImportComplete,
+  initialFiles = []
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const { currentProject } = useProjectStore();
+
+  // 当有初始文件时，自动添加到选中文件列表
+  useEffect(() => {
+    if (initialFiles.length > 0) {
+      const newFiles: FileItem[] = initialFiles.map(file => ({
+        file,
+        path: file.name,
+        status: 'pending',
+        progress: 0
+      }));
+      setSelectedFiles(newFiles);
+    }
+  }, [initialFiles]);
+
+  // 当对话框关闭时清空文件列表
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedFiles([]);
+    }
+  }, [isOpen]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);

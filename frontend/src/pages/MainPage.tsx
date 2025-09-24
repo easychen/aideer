@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Folder } from 'lucide-react';
 import FileGrid from '../components/file-grid/FileGrid';
 import FileDetailModal from '../components/file-detail/FileDetailModal';
+import ImportDialog from '../components/dialogs/ImportDialog';
 import { FileItem } from '../types/index';
 import { useProjectStore } from '../stores/useProjectStore';
 import { usePathContext } from '../contexts/PathContext';
@@ -39,6 +40,11 @@ const MainPage = () => {
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const { fileUpdateTrigger, onFileUpdate } = useFileUpdate();
+  
+  // 拖拽相关状态
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [draggedFiles, setDraggedFiles] = useState<File[]>([]);
 
   useEffect(() => {
     // 初始化时加载项目列表
@@ -114,8 +120,65 @@ const MainPage = () => {
     );
   }
 
+  // 拖拽事件处理器
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 只有当离开整个拖拽区域时才设置为false
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0 && currentProject) {
+      setDraggedFiles(files);
+      setIsImportDialogOpen(true);
+    }
+  };
+
+  const handleImportComplete = () => {
+    setIsImportDialogOpen(false);
+    setDraggedFiles([]);
+    // 触发文件列表刷新
+    setFileGridKey(prev => prev + 1);
+  };
+
   return (
-    <div className="h-full">
+    <div 
+      className={`h-full relative ${isDragOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''}`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* 拖拽提示覆盖层 */}
+      {isDragOver && (
+        <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-10 pointer-events-none">
+          <div className="text-center">
+            <div className="text-2xl mb-2">📁</div>
+            <p className="text-lg font-medium text-blue-600">释放文件以导入</p>
+            <p className="text-sm text-blue-500">将文件拖拽到此处自动导入到当前项目</p>
+          </div>
+        </div>
+      )}
+
       <FileGrid 
         key={fileGridKey}
         projectId={currentProject.id}
@@ -143,6 +206,18 @@ const MainPage = () => {
         onFileUpdated={() => {
           // 保持兼容性，但实际刷新由全局Context处理
         }}
+      />
+
+      {/* 拖拽导入对话框 */}
+      <ImportDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => {
+          setIsImportDialogOpen(false);
+          setDraggedFiles([]);
+        }}
+        currentPath={currentPath}
+        onImportComplete={handleImportComplete}
+        initialFiles={draggedFiles}
       />
     </div>
   );
