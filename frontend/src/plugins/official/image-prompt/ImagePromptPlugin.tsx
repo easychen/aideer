@@ -577,7 +577,7 @@ export const ImagePromptPlugin: React.FC<PluginComponentProps> = ({ file, projec
   };
 
   const renderActions = () => (
-    <div className="flex items-center justify-between p-3 bg-gray-50 border-t border-gray-200">
+    <div className="flex items-center justify-between p-3 bg-gray-50 border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
       <div className="flex items-center space-x-2">
         <button
           onClick={() => setState(prev => ({ ...prev, activeTab: 'structured' }))}
