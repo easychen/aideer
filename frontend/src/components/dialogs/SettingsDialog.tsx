@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle } from 'lucide-react';
+import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw } from 'lucide-react';
 import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useSettings } from '../../hooks/useSettings';
 import { pluginManager } from '../../plugins/manager/PluginManager';
+import apiService from '../../services/api';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type ActiveTab = 'interface' | 'api' | 'plugins' | 'about';
+type ActiveTab = 'interface' | 'api' | 'plugins' | 'maintenance' | 'about';
 
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('interface');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const { themeMode, setTheme } = useTheme();
   const { settings, updateApiSettings } = useSettings();
@@ -41,6 +43,19 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
       ...prev,
       [key]: value
     }));
+  };
+
+  const handleSyncFileInfo = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await apiService.syncFileInfo();
+      alert(`同步完成！更新了 ${result.updatedCount} 条记录`);
+    } catch (error) {
+      console.error('同步文件信息失败:', error);
+      alert('同步失败，请稍后重试');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -94,6 +109,19 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                 <div className="flex items-center space-x-2">
                   <Puzzle className="w-4 h-4" />
                   <span>插件管理</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('maintenance')}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                  activeTab === 'maintenance'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-accent'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <Database className="w-4 h-4" />
+                  <span>数据维护</span>
                 </div>
               </button>
               <button
@@ -282,6 +310,46 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                       <p>暂无已安装的插件</p>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* 数据维护 */}
+            {activeTab === 'maintenance' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-base font-medium mb-4">文件信息同步</h3>
+                  <div className="space-y-4">
+                    <div className="p-4 border border-border rounded-lg bg-muted/50">
+                      <div className="flex items-start space-x-3">
+                        <Database className="w-5 h-5 text-primary mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-medium mb-2">同步文件路径信息</h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            扫描项目目录中的所有文件，并更新数据库中文件额外信息的路径字段。
+                            这个操作会确保文件移动或重命名后，相关的额外信息仍然能够正确关联。
+                          </p>
+                          <button
+                            onClick={handleSyncFileInfo}
+                            disabled={isSyncing}
+                            className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                            <span>{isSyncing ? '同步中...' : '开始同步'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      <h4 className="font-medium mb-2">注意事项：</h4>
+                      <ul className="space-y-1 list-disc list-inside">
+                        <li>同步过程可能需要一些时间，请耐心等待</li>
+                        <li>建议在文件结构发生较大变化后执行同步</li>
+                        <li>同步过程中请不要关闭应用程序</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

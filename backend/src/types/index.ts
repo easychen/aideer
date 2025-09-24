@@ -8,6 +8,20 @@ export interface Project {
   updatedAt: string;
 }
 
+// 文件额外信息类型定义
+export interface FileExtraInfo {
+  id: number;
+  blake3Hash: string;
+  filePaths: string[];
+  links?: string[];
+  tags?: string[];
+  starred: boolean;
+  notes?: string;
+  extraJson?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // 文件相关类型定义
 export interface FileItem {
   id: string;

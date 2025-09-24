@@ -247,10 +247,42 @@ class ApiService {
     }
   }
 
+  // 同步文件信息
+  async syncFileInfo(): Promise<{ updatedCount: number }> {
+    const response = await this.client.post('/file-extra-info/sync');
+    return response.data;
+  }
+
   // 健康检查
   async healthCheck(): Promise<{ status: string; timestamp: string; version: string }> {
     const response = await this.client.get<{ status: string; timestamp: string; version: string }>('/health');
     return response.data;
+  }
+
+  // 文件额外信息相关API
+  async getFileExtraInfo(filePath: string, projectId: number): Promise<any> {
+    try {
+      const response = await this.client.get(`/file-extra-info/${encodeURIComponent(filePath)}?projectId=${projectId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null; // 文件没有额外信息
+      }
+      throw error;
+    }
+  }
+
+  async saveFileExtraInfo(filePath: string, extraInfo: any, projectId: number): Promise<any> {
+    try {
+      const response = await this.client.put(`/file-extra-info/${encodeURIComponent(filePath)}?projectId=${projectId}`, {
+        ...extraInfo,
+        filePaths: [filePath]
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Save file extra info error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Failed to save file extra info');
+    }
   }
 }
 

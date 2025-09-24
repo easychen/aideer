@@ -15,7 +15,7 @@ const PROJECT_DATA_ROOT = path.resolve(process.cwd(), 'data');
 // 获取所有项目
 router.get('/', async (req, res) => {
   try {
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     res.json({
       success: true,
       data: projects,

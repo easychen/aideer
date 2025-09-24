@@ -10,6 +10,7 @@ import { dirname } from 'path';
 import projectRoutes from './routes/projects.js';
 import directoryRoutes from './routes/directories.js';
 import fileRoutes from './routes/files.js';
+import fileExtraInfoRoutes from './routes/fileExtraInfo.js';
 
 // 服务导入
 import { DatabaseService } from './services/database.js';
@@ -56,6 +57,7 @@ app.use('/data', express.static(process.env.AI_DEER_DATA_PATH ?  path.join( proc
 app.use('/api/projects', projectRoutes);
 app.use('/api/directories', directoryRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/file-extra-info', fileExtraInfoRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
@@ -84,7 +86,17 @@ app.use('*', (req, res) => {
 const startServer = async () => {
   try {
     // 初始化数据库服务
-    await DatabaseService.initialize();
+    const dbService = DatabaseService.getInstance();
+    const dataDir = path.join(process.env.AI_DEER_DATA_PATH || path.join(__dirname, '..', 'data'));
+    const dbPath = path.join(dataDir, 'aideer.db');
+    
+    // 确保数据目录存在
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    await dbService.connect(dbPath);
+    await dbService.createTables();
     console.log('✅ Database service initialized');
     
     // 初始化文件系统服务

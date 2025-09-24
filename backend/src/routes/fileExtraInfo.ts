@@ -1,0 +1,294 @@
+import { Router, Request, Response } from 'express';
+import { DatabaseService } from '../services/database.js';
+import { Blake3HashCalculator } from '../utils/blake3Hash.js';
+import { FileExtraInfo } from '../types/index.js';
+import fs from 'fs';
+import path from 'path';
+
+const router: Router = Router();
+
+/**
+ * 获取文件的额外信息
+ * GET /api/file-extra-info/:filePath?projectId=xxx
+ */
+router.get('/:filePath(*)', async (req: Request, res: Response) => {
+  try {
+    const relativePath = decodeURIComponent(req.params.filePath);
+    const projectId = req.query.projectId as string;
+    
+    if (!projectId) {
+      return res.status(400).json({ error: '缺少项目ID参数' });
+    }
+
+    // 获取项目信息
+    const db = DatabaseService.getInstance();
+    const project = await db.getProjectById(parseInt(projectId));
+    if (!project) {
+      return res.status(404).json({ error: '项目不存在' });
+    }
+
+    // 构建完整的文件路径
+    const { PathUtils } = await import('../utils/pathUtils.js');
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const filePath = path.join(projectAbsolutePath, relativePath);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: '文件不存在' });
+    }
+
+    // 计算文件的BLAKE3哈希
+    const blake3Hash = await Blake3HashCalculator.calculateFileHash(filePath);
+    
+    // 从数据库查询额外信息
+    let fileExtraInfo = await db.getFileExtraInfoByHash(blake3Hash);
+
+    // 如果不存在记录，创建一个默认记录
+    if (!fileExtraInfo) {
+      fileExtraInfo = await db.createFileExtraInfo({
+        blake3Hash,
+        filePaths: [relativePath],
+        starred: false
+      });
+    } else {
+      // 检查文件路径是否已存在，如果不存在则添加
+      if (!fileExtraInfo.filePaths.includes(relativePath)) {
+        const updatedPaths = [...fileExtraInfo.filePaths, relativePath];
+        fileExtraInfo = await db.updateFileExtraInfo(blake3Hash, {
+          filePaths: updatedPaths
+        });
+      }
+    }
+
+    res.json(fileExtraInfo);
+  } catch (error) {
+    console.error('获取文件额外信息失败:', error);
+    res.status(500).json({ error: '获取文件额外信息失败' });
+  }
+});
+
+/**
+ * 更新文件的额外信息
+ * PUT /api/file-extra-info/:filePath?projectId=xxx
+ */
+router.put('/:filePath(*)', async (req: Request, res: Response) => {
+  try {
+    const relativePath = decodeURIComponent(req.params.filePath);
+    const projectId = req.query.projectId as string;
+    const updateData = req.body;
+    
+    if (!projectId) {
+      return res.status(400).json({ error: '缺少项目ID参数' });
+    }
+
+    // 获取项目信息
+    const db = DatabaseService.getInstance();
+    const project = await db.getProjectById(parseInt(projectId));
+    if (!project) {
+      return res.status(404).json({ error: '项目不存在' });
+    }
+
+    // 构建完整的文件路径
+    const { PathUtils } = await import('../utils/pathUtils.js');
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const filePath = path.join(projectAbsolutePath, relativePath);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: '文件不存在' });
+    }
+
+    // 计算文件的BLAKE3哈希
+    const blake3Hash = await Blake3HashCalculator.calculateFileHash(filePath);
+    
+    let fileExtraInfo = await db.getFileExtraInfoByHash(blake3Hash);
+
+    if (!fileExtraInfo) {
+      // 如果记录不存在，创建新记录
+      fileExtraInfo = await db.createFileExtraInfo({
+        blake3Hash,
+        filePaths: [relativePath],
+        starred: false,
+        ...updateData
+      });
+    } else {
+      // 更新现有记录
+      fileExtraInfo = await db.updateFileExtraInfo(blake3Hash, {
+        ...updateData,
+        filePaths: updateData.filePaths || [relativePath]
+      });
+    }
+
+    res.json(fileExtraInfo);
+  } catch (error) {
+    console.error('更新文件额外信息失败:', error);
+    res.status(500).json({ error: '更新文件额外信息失败' });
+  }
+});
+
+/**
+ * 删除文件的额外信息
+ * DELETE /api/file-extra-info/:filePath?projectId=xxx
+ */
+router.delete('/:filePath(*)', async (req: Request, res: Response) => {
+  try {
+    const relativePath = decodeURIComponent(req.params.filePath);
+    const projectId = req.query.projectId as string;
+    
+    if (!projectId) {
+      return res.status(400).json({ error: '缺少项目ID参数' });
+    }
+
+    // 获取项目信息
+    const db = DatabaseService.getInstance();
+    const project = await db.getProjectById(parseInt(projectId));
+    if (!project) {
+      return res.status(404).json({ error: '项目不存在' });
+    }
+
+    // 构建完整的文件路径
+    const { PathUtils } = await import('../utils/pathUtils.js');
+    const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
+    const filePath = path.join(projectAbsolutePath, relativePath);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: '文件不存在' });
+    }
+
+    // 计算文件的BLAKE3哈希
+    const blake3Hash = await Blake3HashCalculator.calculateFileHash(filePath);
+    
+    // 删除数据库中的额外信息
+    const success = await db.deleteFileExtraInfo(blake3Hash);
+
+    if (!success) {
+      return res.status(404).json({ error: '文件额外信息不存在' });
+    }
+
+    res.json({ success: true, message: '文件额外信息已删除' });
+  } catch (error) {
+    console.error('删除文件额外信息失败:', error);
+    res.status(500).json({ error: '删除文件额外信息失败' });
+  }
+});
+
+/**
+ * 同步文件路径信息
+ * POST /api/file-extra-info/sync-paths
+ */
+router.post('/sync-paths', async (req: Request, res: Response) => {
+  try {
+    const { directories }: { directories: string[] } = req.body;
+    
+    if (!directories || !Array.isArray(directories)) {
+      return res.status(400).json({ error: '请提供要同步的目录列表' });
+    }
+
+    const db = DatabaseService.getInstance();
+    const allFileExtraInfo = await db.getAllFileExtraInfo();
+    
+    let syncedCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    for (const info of allFileExtraInfo) {
+      try {
+        const validPaths: string[] = [];
+        
+        // 检查现有路径是否仍然有效
+        for (const filePath of info.filePaths) {
+          if (fs.existsSync(filePath)) {
+            validPaths.push(filePath);
+          }
+        }
+
+        // 在指定目录中查找具有相同哈希的文件
+        for (const directory of directories) {
+          if (fs.existsSync(directory)) {
+            const foundPaths = await findFilesByHash(directory, info.blake3Hash);
+            for (const foundPath of foundPaths) {
+              if (!validPaths.includes(foundPath)) {
+                validPaths.push(foundPath);
+              }
+            }
+          }
+        }
+
+        // 更新文件路径
+        if (validPaths.length !== info.filePaths.length || 
+            !validPaths.every(path => info.filePaths.includes(path))) {
+          await db.updateFileExtraInfo(info.blake3Hash, {
+            filePaths: validPaths
+          });
+          syncedCount++;
+        }
+      } catch (error) {
+        errorCount++;
+        errors.push(`同步哈希 ${info.blake3Hash} 失败: ${error}`);
+      }
+    }
+
+    res.json({
+      message: '文件路径同步完成',
+      syncedCount,
+      errorCount,
+      errors: errors.slice(0, 10) // 只返回前10个错误
+    });
+  } catch (error) {
+    console.error('同步文件路径失败:', error);
+    res.status(500).json({ error: '同步文件路径失败' });
+  }
+});
+
+/**
+ * 获取所有文件额外信息
+ * GET /api/file-extra-info
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const db = DatabaseService.getInstance();
+    const allFileExtraInfo = await db.getAllFileExtraInfo();
+    res.json(allFileExtraInfo);
+  } catch (error) {
+    console.error('获取所有文件额外信息失败:', error);
+    res.status(500).json({ error: '获取所有文件额外信息失败' });
+  }
+});
+
+/**
+ * 递归查找目录中具有指定哈希的文件
+ */
+async function findFilesByHash(directory: string, targetHash: string): Promise<string[]> {
+  const foundPaths: string[] = [];
+  
+  async function searchDirectory(dir: string) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (entry.isDirectory()) {
+          // 递归搜索子目录
+          await searchDirectory(fullPath);
+        } else if (entry.isFile()) {
+          try {
+            // 计算文件哈希并比较
+            const fileHash = await Blake3HashCalculator.calculateFileHash(fullPath);
+            if (fileHash === targetHash) {
+              foundPaths.push(fullPath);
+            }
+          } catch (error) {
+            // 忽略无法读取的文件
+            console.warn(`无法计算文件哈希: ${fullPath}`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`无法读取目录: ${dir}`, error);
+    }
+  }
+  
+  await searchDirectory(directory);
+  return foundPaths;
+}
+
+export default router;

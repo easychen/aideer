@@ -6,6 +6,7 @@ import { useFileUpdate } from '../../contexts/FileUpdateContext';
 import PluginContainer from '../../plugins/components/PluginContainer';
 import { pluginManager } from '../../plugins/manager/PluginManager';
 import { useProjectStore } from '../../stores/useProjectStore';
+import FileExtraInfoComponent from './FileExtraInfo';
 
 interface FileDetailModalProps {
   file: FileItem | null;
@@ -405,23 +406,12 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             onMouseDown={(e) => handleMouseDown(e, 'right')}
           />
           
-          {/* 右侧栏 */}
+          {/* 右侧栏 - 文件额外信息 */}
           <div className="flex flex-col" style={{ width: hasAvailablePlugins ? `${rightWidth}%` : '50%' }}>
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="w-4 h-4" />
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  AI 助手
-                </h3>
-              </div>
-            </div>
-            <div className="flex-1 p-4 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>AI 聊天界面</p>
-                <p className="text-sm mt-1">即将推出</p>
-              </div>
-            </div>
+            <FileExtraInfoComponent
+              file={file}
+              projectId={projectId}
+            />
           </div>
         </div>
       </div>

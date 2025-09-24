@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId.toString()));
     
     if (!project) {
@@ -126,7 +126,7 @@ router.get('/:id', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId.toString()));
     
     if (!project) {
@@ -185,7 +185,7 @@ router.put('/:id/content/binary', updateUpload.single('file'), async (req, res) 
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId));
     
     if (!project) {
@@ -261,7 +261,7 @@ router.put('/:id/content', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId));
     
     if (!project) {
@@ -347,7 +347,7 @@ router.post('/', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId));
     
     if (!project) {
@@ -437,7 +437,7 @@ router.put('/:id/rename', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId));
     
     if (!project) {
@@ -541,7 +541,7 @@ router.delete('/batch', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId.toString()));
     
     if (!project) {
@@ -616,7 +616,7 @@ router.delete('/:id', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId.toString()));
     
     if (!project) {
@@ -683,7 +683,7 @@ router.post('/upload', upload.array('files'), async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId));
     
     if (!project) {
@@ -780,7 +780,7 @@ router.put('/batch/move', async (req, res) => {
     }
     
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     const project = projects.find(p => p.id === parseInt(projectId.toString()));
     
     if (!project) {
@@ -918,7 +918,7 @@ router.post('/import-media-binary', upload.single('file'), async (req, res) => {
     }
 
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     let project = projects.find(p => p.name === projectPath || p.path.endsWith(projectPath));
     
     if (!project) {
@@ -1057,7 +1057,7 @@ router.post('/import-media-batch', upload.array('files'), async (req, res) => {
     }
 
     // 获取项目信息
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     let project = projects.find(p => p.name === projectPath || p.path.endsWith(projectPath));
     
     if (!project) {
@@ -1191,7 +1191,7 @@ router.post('/import-media', async (req, res) => {
     }
 
     // 获取默认项目（假设第一个项目为默认项目）
-    const projects = await dbService.getProjects();
+    const projects = await dbService.getAllProjects();
     if (projects.length === 0) {
       return res.status(404).json({
         success: false,
