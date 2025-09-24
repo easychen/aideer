@@ -402,7 +402,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                           </div>
                           
                           {/* 项目列表 */}
-                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                          <div className="space-y-2 max-h-36 overflow-y-auto">
                             {projects.map((project) => (
                               <label key={project.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded hover:bg-background/50 transition-colors">
                                 <input
@@ -411,7 +411,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                                   onChange={() => handleProjectToggle(project.id)}
                                   className="w-4 h-4 text-primary"
                                 />
-                                <div className="flex-1">
+                                <div className="flex-1 flex flex-row justify-between">
                                   <div className="font-medium text-sm">{project.name}</div>
                                   <div className="text-xs text-muted-foreground">{project.path}</div>
                                 </div>
