@@ -46,16 +46,17 @@ router.get('/:filePath(*)', async (req: Request, res: Response) => {
     if (!fileExtraInfo) {
       fileExtraInfo = await db.createFileExtraInfo({
         blake3Hash,
-        filePaths: [relativePath],
+        projectId: project.id,
+        relativePaths: [relativePath],
         starred: false
       });
     } else {
       // 检查文件路径是否已存在，如果不存在则添加
-      if (!fileExtraInfo.filePaths.includes(relativePath)) {
-        const updatedPaths = [...fileExtraInfo.filePaths, relativePath];
-        fileExtraInfo = await db.updateFileExtraInfo(blake3Hash, {
-          filePaths: updatedPaths
-        });
+      if (!fileExtraInfo.relativePaths.includes(relativePath)) {
+      const updatedPaths = [...fileExtraInfo.relativePaths, relativePath];
+      fileExtraInfo = await db.updateFileExtraInfo(blake3Hash, {
+        relativePaths: updatedPaths
+      });
       }
     }
 
@@ -103,18 +104,19 @@ router.put('/:filePath(*)', async (req: Request, res: Response) => {
 
     if (!fileExtraInfo) {
       // 如果记录不存在，创建新记录
-      fileExtraInfo = await db.createFileExtraInfo({
-        blake3Hash,
-        filePaths: [relativePath],
-        starred: false,
-        ...updateData
-      });
-    } else {
-      // 更新现有记录
-      fileExtraInfo = await db.updateFileExtraInfo(blake3Hash, {
-        ...updateData,
-        filePaths: updateData.filePaths || [relativePath]
-      });
+    fileExtraInfo = await db.createFileExtraInfo({
+      blake3Hash,
+      projectId: project.id,
+      relativePaths: [relativePath],
+      starred: false,
+      ...updateData
+    });
+  } else {
+    // 更新现有记录
+    fileExtraInfo = await db.updateFileExtraInfo(blake3Hash, {
+      ...updateData,
+      relativePaths: updateData.relativePaths || [relativePath]
+    });
     }
 
     res.json(fileExtraInfo);
@@ -173,16 +175,26 @@ router.delete('/:filePath(*)', async (req: Request, res: Response) => {
 /**
  * 同步文件路径信息
  * POST /api/file-extra-info/sync-paths
+ * 根据项目ID数组，扫描项目目录并更新文件额外信息的路径
  */
 router.post('/sync-paths', async (req: Request, res: Response) => {
   try {
-    const { directories }: { directories: string[] } = req.body;
+    const { projectIds } = req.body;
     
-    if (!directories || !Array.isArray(directories)) {
-      return res.status(400).json({ error: '请提供要同步的目录列表' });
+    if (!projectIds || !Array.isArray(projectIds) || projectIds.length === 0) {
+      return res.status(400).json({ error: '请提供有效的项目ID数组' });
     }
 
     const db = DatabaseService.getInstance();
+    
+    // 获取指定的项目信息
+    const allProjects = await db.getAllProjects();
+    const projects = allProjects.filter(p => projectIds.includes(p.id));
+    
+    if (projects.length === 0) {
+      return res.status(400).json({ error: '未找到有效的项目' });
+    }
+
     const allFileExtraInfo = await db.getAllFileExtraInfo();
     
     let syncedCount = 0;
@@ -191,44 +203,52 @@ router.post('/sync-paths', async (req: Request, res: Response) => {
 
     for (const info of allFileExtraInfo) {
       try {
-        const validPaths: string[] = [];
+        // 找到对应的项目
+        const project = projects.find(p => p.id === info.projectId);
+        if (!project) {
+          continue; // 跳过不在指定项目列表中的文件
+        }
+
+        const { PathUtils } = await import('../utils/pathUtils.js');
+        const projectAbsolutePath = PathUtils.getAbsolutePath(project.path);
         
-        // 检查现有路径是否仍然有效
-        for (const filePath of info.filePaths) {
-          if (fs.existsSync(filePath)) {
-            validPaths.push(filePath);
+        const validRelativePaths: string[] = [];
+        
+        // 检查现有相对路径是否仍然有效
+        for (const relativePath of info.relativePaths) {
+          const absolutePath = path.join(projectAbsolutePath, relativePath);
+          if (fs.existsSync(absolutePath)) {
+            validRelativePaths.push(relativePath);
           }
         }
 
-        // 在指定目录中查找具有相同哈希的文件
-        for (const directory of directories) {
-          if (fs.existsSync(directory)) {
-            const foundPaths = await findFilesByHash(directory, info.blake3Hash);
-            for (const foundPath of foundPaths) {
-              if (!validPaths.includes(foundPath)) {
-                validPaths.push(foundPath);
-              }
-            }
+        // 在项目目录中查找具有相同哈希的文件
+        const foundPaths = await findFilesByHash(projectAbsolutePath, info.blake3Hash);
+        for (const foundAbsolutePath of foundPaths) {
+          const relativePath = path.relative(projectAbsolutePath, foundAbsolutePath);
+          if (!validRelativePaths.includes(relativePath)) {
+            validRelativePaths.push(relativePath);
           }
         }
 
         // 更新文件路径
-        if (validPaths.length !== info.filePaths.length || 
-            !validPaths.every(path => info.filePaths.includes(path))) {
+        if (validRelativePaths.length !== info.relativePaths.length || 
+            !validRelativePaths.every(path => info.relativePaths.includes(path))) {
           await db.updateFileExtraInfo(info.blake3Hash, {
-            filePaths: validPaths
+            relativePaths: validRelativePaths
           });
           syncedCount++;
         }
       } catch (error) {
+        console.error(`同步文件 ${info.blake3Hash} 时出错:`, error);
         errorCount++;
-        errors.push(`同步哈希 ${info.blake3Hash} 失败: ${error}`);
+        errors.push(`文件 ${info.blake3Hash}: ${error instanceof Error ? error.message : '未知错误'}`);
       }
     }
 
     res.json({
       message: '文件路径同步完成',
-      syncedCount,
+      updatedCount: syncedCount,
       errorCount,
       errors: errors.slice(0, 10) // 只返回前10个错误
     });

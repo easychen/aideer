@@ -12,6 +12,24 @@ const fsService = FileSystemService.getInstance();
 // 定义项目数据根目录
 const PROJECT_DATA_ROOT = path.resolve(process.cwd(), 'data');
 
+// 获取数据根目录路径
+router.get('/data-root', async (req, res) => {
+  try {
+    const dataRoot = PathUtils.getProjectDataRoot();
+    res.json({
+      success: true,
+      data: { dataRoot },
+      message: 'Data root path retrieved successfully'
+    } as ApiResponse<{ dataRoot: string }>);
+  } catch (error) {
+    console.error('Error fetching data root path:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch data root path'
+    } as ApiResponse);
+  }
+});
+
 // 获取所有项目
 router.get('/', async (req, res) => {
   try {

@@ -12,7 +12,8 @@ export interface Project {
 export interface FileExtraInfo {
   id: number;
   blake3Hash: string;
-  filePaths: string[];
+  projectId: number;
+  relativePaths: string[];
   links?: string[];
   tags?: string[];
   starred: boolean;

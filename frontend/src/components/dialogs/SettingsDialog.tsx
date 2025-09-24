@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw } from 'lucide-react';
 import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useSettings } from '../../hooks/useSettings';
 import { pluginManager } from '../../plugins/manager/PluginManager';
 import apiService from '../../services/api';
+import { Project } from '../../types';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('interface');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
   
   const { themeMode, setTheme } = useTheme();
   const { settings, updateApiSettings } = useSettings();
@@ -25,6 +28,24 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
     apiBaseUrl: settings.api.apiBaseUrl,
     model: settings.api.model
   });
+
+  // 加载项目列表
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const projectList = await apiService.getProjects();
+        setProjects(projectList);
+        // 默认选中所有项目
+        setSelectedProjectIds(projectList.map(p => p.id));
+      } catch (error) {
+        console.error('加载项目列表失败:', error);
+      }
+    };
+
+    if (isOpen) {
+      loadProjects();
+    }
+  }, [isOpen]);
 
   const handleClose = () => {
     onClose();
@@ -45,11 +66,44 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
     }));
   };
 
+  const handleProjectToggle = (projectId: number) => {
+    setSelectedProjectIds(prev => 
+      prev.includes(projectId) 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
+
+  const handleSelectAllProjects = () => {
+    setSelectedProjectIds(projects.map(p => p.id));
+  };
+
+  const handleDeselectAllProjects = () => {
+    setSelectedProjectIds([]);
+  };
+
   const handleSyncFileInfo = async () => {
+    if (selectedProjectIds.length === 0) {
+      alert('请至少选择一个项目进行同步');
+      return;
+    }
+
     setIsSyncing(true);
     try {
-      const result = await apiService.syncFileInfo();
-      alert(`同步完成！更新了 ${result.updatedCount} 条记录`);
+      const result = await apiService.syncFileInfo(selectedProjectIds);
+      
+      let message = `同步完成！更新了 ${result.updatedCount} 条记录`;
+      if (result.errorCount && result.errorCount > 0) {
+        message += `\n遇到 ${result.errorCount} 个错误`;
+        if (result.errors && result.errors.length > 0) {
+          message += `\n错误详情：\n${result.errors.slice(0, 3).join('\n')}`;
+          if (result.errors.length > 3) {
+            message += `\n...还有 ${result.errors.length - 3} 个错误`;
+          }
+        }
+      }
+      
+      alert(message);
     } catch (error) {
       console.error('同步文件信息失败:', error);
       alert('同步失败，请稍后重试');
@@ -320,18 +374,78 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                 <div>
                   <h3 className="text-base font-medium mb-4">文件信息同步</h3>
                   <div className="space-y-4">
+                    {/* 项目选择 */}
                     <div className="p-4 border border-border rounded-lg bg-muted/50">
                       <div className="flex items-start space-x-3">
                         <Database className="w-5 h-5 text-primary mt-0.5" />
                         <div className="flex-1">
+                          <h4 className="font-medium mb-2">选择要同步的项目</h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            选择需要同步文件信息的项目。可以选择单个或多个项目进行同步。
+                          </p>
+                          
+                          {/* 全选/取消全选按钮 */}
+                          <div className="flex items-center space-x-2 mb-3">
+                            <button
+                              onClick={handleSelectAllProjects}
+                              className="text-sm text-primary hover:text-primary/80 transition-colors"
+                            >
+                              全选
+                            </button>
+                            <span className="text-muted-foreground">|</span>
+                            <button
+                              onClick={handleDeselectAllProjects}
+                              className="text-sm text-primary hover:text-primary/80 transition-colors"
+                            >
+                              取消全选
+                            </button>
+                          </div>
+                          
+                          {/* 项目列表 */}
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {projects.map((project) => (
+                              <label key={project.id} className="flex items-center space-x-3 cursor-pointer p-2 rounded hover:bg-background/50 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProjectIds.includes(project.id)}
+                                  onChange={() => handleProjectToggle(project.id)}
+                                  className="w-4 h-4 text-primary"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{project.name}</div>
+                                  <div className="text-xs text-muted-foreground">{project.path}</div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                          
+                          {projects.length === 0 && (
+                            <div className="text-center py-4 text-muted-foreground text-sm">
+                              暂无项目
+                            </div>
+                          )}
+                          
+                          {/* 选择状态提示 */}
+                          <div className="mt-3 text-sm text-muted-foreground">
+                            已选择 {selectedProjectIds.length} / {projects.length} 个项目
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 同步操作 */}
+                    <div className="p-4 border border-border rounded-lg bg-muted/50">
+                      <div className="flex items-start space-x-3">
+                        <RefreshCw className="w-5 h-5 text-primary mt-0.5" />
+                        <div className="flex-1">
                           <h4 className="font-medium mb-2">同步文件路径信息</h4>
                           <p className="text-sm text-muted-foreground mb-4">
-                            扫描项目目录中的所有文件，并更新数据库中文件额外信息的路径字段。
+                            扫描选中项目目录中的所有文件，并更新数据库中文件额外信息的路径字段。
                             这个操作会确保文件移动或重命名后，相关的额外信息仍然能够正确关联。
                           </p>
                           <button
                             onClick={handleSyncFileInfo}
-                            disabled={isSyncing}
+                            disabled={isSyncing || selectedProjectIds.length === 0}
                             className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -347,6 +461,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                         <li>同步过程可能需要一些时间，请耐心等待</li>
                         <li>建议在文件结构发生较大变化后执行同步</li>
                         <li>同步过程中请不要关闭应用程序</li>
+                        <li>请至少选择一个项目才能开始同步</li>
                       </ul>
                     </div>
                   </div>

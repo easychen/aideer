@@ -6,7 +6,8 @@ import apiService from '../../services/api';
 interface FileExtraInfo {
   id?: number;
   blake3Hash: string;
-  filePaths: string[];
+  projectId: number;
+  relativePaths: string[];
   links: string[];
   tags: string[];
   starred: boolean;
@@ -24,7 +25,8 @@ interface FileExtraInfoProps {
 const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId }) => {
   const [extraInfo, setExtraInfo] = useState<FileExtraInfo>({
     blake3Hash: '',
-    filePaths: [],
+    projectId: projectId,
+    relativePaths: [],
     links: [],
     tags: [],
     starred: false,
@@ -51,7 +53,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         // 确保所有数组字段都有默认值
         setExtraInfo({
           ...data,
-          filePaths: data.filePaths || [file.relativePath],
+          relativePaths: data.relativePaths || [file.relativePath],
           links: data.links || [],
           tags: data.tags || [],
           notes: data.notes || '',
@@ -62,7 +64,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         // 如果没有数据，设置默认值
         setExtraInfo(prev => ({
           ...prev,
-          filePaths: [file.relativePath]
+          relativePaths: [file.relativePath]
         }));
       }
     } catch (error) {
@@ -85,7 +87,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         ...updatedData,
         links: updatedData.links || [],
         tags: updatedData.tags || [],
-        filePaths: updatedData.filePaths || [file.relativePath],
+        relativePaths: updatedData.relativePaths || [file.relativePath],
         notes: updatedData.notes || '',
         extraJson: updatedData.extraJson || {}
       });

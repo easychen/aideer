@@ -53,6 +53,11 @@ class ApiService {
     return response.data.data || response.data;
   }
 
+  async getDataRoot(): Promise<string> {
+    const response = await this.client.get<ApiResponse<{ dataRoot: string }>>('/projects/data-root');
+    return response.data.data.dataRoot;
+  }
+
   async createProject(project: { name: string; path: string; description?: string }): Promise<Project> {
     const response = await this.client.post<ApiResponse<Project>>('/projects', project);
     return response.data.data || response.data;
@@ -248,8 +253,8 @@ class ApiService {
   }
 
   // 同步文件信息
-  async syncFileInfo(): Promise<{ updatedCount: number }> {
-    const response = await this.client.post('/file-extra-info/sync');
+  async syncFileInfo(projectIds: number[]): Promise<{ updatedCount: number; errorCount?: number; errors?: string[] }> {
+    const response = await this.client.post('/file-extra-info/sync-paths', { projectIds });
     return response.data;
   }
 
@@ -276,7 +281,7 @@ class ApiService {
     try {
       const response = await this.client.put(`/file-extra-info/${encodeURIComponent(filePath)}?projectId=${projectId}`, {
         ...extraInfo,
-        filePaths: [filePath]
+        relativePaths: [filePath]
       });
       return response.data;
     } catch (error: any) {

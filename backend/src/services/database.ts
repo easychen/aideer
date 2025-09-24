@@ -146,12 +146,13 @@ export class DatabaseService {
   // 文件额外信息相关方法
   public async createFileExtraInfo(info: Omit<FileExtraInfo, 'id' | 'createdAt' | 'updatedAt'>): Promise<FileExtraInfo> {
     const sql = `
-      INSERT INTO file_extra_info (blake3_hash, file_paths, links, tags, starred, notes, extra_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO file_extra_info (blake3_hash, project_id, relative_paths, links, tags, starred, notes, extra_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const result = await this.run(sql, [
       info.blake3Hash,
-      JSON.stringify(info.filePaths),
+      info.projectId,
+      JSON.stringify(info.relativePaths),
       info.links ? JSON.stringify(info.links) : null,
       info.tags ? JSON.stringify(info.tags) : null,
       info.starred ? 1 : 0,
@@ -183,7 +184,7 @@ export class DatabaseService {
     const values = Object.entries(updates)
       .filter(([key]) => key !== 'id' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'blake3Hash')
       .map(([key, value]) => {
-        if (key === 'filePaths' || key === 'links' || key === 'tags' || key === 'extraJson') {
+        if (key === 'relativePaths' || key === 'links' || key === 'tags' || key === 'extraJson') {
           return value ? JSON.stringify(value) : null;
         }
         if (key === 'starred') {
@@ -225,7 +226,8 @@ export class DatabaseService {
     return {
       id: row.id,
       blake3Hash: row.blake3_hash,
-      filePaths: JSON.parse(row.file_paths || '[]'),
+      projectId: row.project_id,
+      relativePaths: JSON.parse(row.relative_paths || '[]'),
       links: row.links ? JSON.parse(row.links) : [],
       tags: row.tags ? JSON.parse(row.tags) : [],
       starred: row.starred === 1,

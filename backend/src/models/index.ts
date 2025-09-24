@@ -17,14 +17,16 @@ export const CREATE_FILE_EXTRA_INFO_TABLE = `
   CREATE TABLE IF NOT EXISTS file_extra_info (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     blake3_hash TEXT NOT NULL UNIQUE,
-    file_paths TEXT NOT NULL,
+    project_id INTEGER NOT NULL,
+    relative_paths TEXT NOT NULL,
     links TEXT,
     tags TEXT,
     starred INTEGER DEFAULT 0,
     notes TEXT,
     extra_json TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
   )
 `;
 
@@ -32,6 +34,7 @@ export const CREATE_FILE_EXTRA_INFO_TABLE = `
 export const CREATE_INDEXES = [
   'CREATE INDEX IF NOT EXISTS idx_projects_path ON projects (path)',
   'CREATE INDEX IF NOT EXISTS idx_file_extra_info_blake3 ON file_extra_info (blake3_hash)',
+  'CREATE INDEX IF NOT EXISTS idx_file_extra_info_project ON file_extra_info (project_id)',
   'CREATE INDEX IF NOT EXISTS idx_file_extra_info_starred ON file_extra_info (starred)',
   'CREATE INDEX IF NOT EXISTS idx_file_extra_info_updated ON file_extra_info (updated_at)'
 ];
