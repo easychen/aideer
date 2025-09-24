@@ -11,6 +11,7 @@ import projectRoutes from './routes/projects.js';
 import directoryRoutes from './routes/directories.js';
 import fileRoutes from './routes/files.js';
 import fileExtraInfoRoutes from './routes/fileExtraInfo.js';
+import searchRoutes from './routes/search.js';
 
 // 服务导入
 import { DatabaseService } from './services/database.js';
@@ -58,6 +59,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/directories', directoryRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/file-extra-info', fileExtraInfoRoutes);
+app.use('/api/search', searchRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

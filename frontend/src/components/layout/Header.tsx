@@ -1,4 +1,4 @@
-import { Plus, Settings, ChevronRight, Home, Edit2, Trash2, List, CheckSquare, Square, ChevronDown } from 'lucide-react';
+import { Plus, Settings, ChevronRight, Home, Edit2, Trash2, List, CheckSquare, Square, ChevronDown, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { usePathContext } from '../../contexts/PathContext';
@@ -8,6 +8,24 @@ import EditFolderDialog from '../dialogs/EditFolderDialog';
 import DeleteFolderDialog from '../dialogs/DeleteFolderDialog';
 import BatchDeleteDialog from '../dialogs/BatchDeleteDialog';
 import BatchMoveDialog from '../dialogs/BatchMoveDialog';
+import { FileItem } from '../../types/index';
+import FileDetailModal from '../file-detail/FileDetailModal';
+import { apiService } from '../../services/api';
+
+interface SearchResult {
+  type: 'file' | 'note';
+  id: string;
+  name: string;
+  path: string;
+  relativePath: string;
+  projectId: number;
+  projectName: string;
+  matchType: 'filename' | 'content';
+  snippet?: string;
+  notes?: string;
+  tags?: string[];
+  starred?: boolean;
+}
 
 interface HeaderProps {
   currentPath?: string;
@@ -39,6 +57,15 @@ const Header = ({
   const [isBatchMenuOpen, setIsBatchMenuOpen] = useState(false);
   const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
   const [isBatchMoveDialogOpen, setIsBatchMoveDialogOpen] = useState(false);
+  
+  // 搜索相关状态
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+  const [isFileDetailOpen, setIsFileDetailOpen] = useState(false);
+  
   const { setCurrentPath } = usePathContext();
 
   const handleImportClick = () => {
@@ -58,6 +85,56 @@ const Header = ({
   
   const handleSettingsClose = () => {
     setIsSettingsDialogOpen(false);
+  };
+
+  const handleSearchToggle = () => {
+    setIsSearchVisible(!isSearchVisible);
+    if (!isSearchVisible) {
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !currentProject) return;
+    
+    setIsSearching(true);
+    try {
+      const results = await apiService.search(searchQuery, currentProject.id);
+      setSearchResults(results.results);
+    } catch (error) {
+      console.error('搜索失败:', error);
+      // 清空搜索结果
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchResultClick = async (result: SearchResult) => {
+    try {
+      if (result.type === 'file') {
+        // 获取文件详细信息
+        const fileInfo = await apiService.getFileById(result.id, result.projectId);
+        setSelectedFile(fileInfo);
+        setIsFileDetailOpen(true);
+      } else if (result.type === 'note') {
+        // 对于笔记类型，需要先获取文件信息
+        const files = await apiService.getProjectFiles(result.projectId);
+        const matchingFile = files.files.find(f => f.relativePath === result.relativePath);
+        if (matchingFile) {
+          setSelectedFile(matchingFile);
+          setIsFileDetailOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error('获取文件信息失败:', error);
+    }
+    
+    // 清空搜索结果
+    setSearchResults([]);
+    setIsSearchVisible(false);
+    setSearchQuery('');
   };
   
   // 从项目数据目录开始构建面包屑路径
@@ -249,6 +326,143 @@ const Header = ({
             </div>
           </>
         )}
+        
+        {/* 搜索功能 */}
+        <div className="relative flex items-center">
+          {/* 搜索框 - 可切换显示 */}
+          {isSearchVisible && (
+            <div className="flex items-center mr-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  } else if (e.key === 'Escape') {
+                    setIsSearchVisible(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }
+                }}
+                placeholder="搜索文件和笔记..."
+                className="h-9 px-3 w-64 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus
+              />
+              <button
+                onClick={() => {
+                  setIsSearchVisible(false);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }}
+                className="ml-1 p-2 hover:bg-muted rounded-md transition-colors"
+                title="关闭搜索"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          
+          {/* 搜索按钮 */}
+          <button 
+            onClick={isSearchVisible ? handleSearch : handleSearchToggle}
+            disabled={!currentProject || (isSearchVisible && !searchQuery.trim())}
+            className="h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isSearchVisible ? "搜索" : "打开搜索"}
+          >
+            <Search className="h-4 w-4" />
+          </button>
+          
+          {/* 搜索结果下拉框 */}
+          {searchResults.length > 0 && (
+            <div className="absolute top-full right-0 mt-1 w-80 bg-background border border-border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+              <div className="p-2 border-b border-border">
+                <span className="text-sm font-medium text-muted-foreground">搜索结果 ({searchResults.length})</span>
+              </div>
+              {searchResults.map((result) => (
+                <button
+                  key={`${result.type}-${result.id}`}
+                  onClick={() => handleSearchResultClick(result)}
+                  className="w-full p-3 text-left hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                >
+                  <div className="flex items-start space-x-3">
+                    {/* 图片预览 */}
+                    <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                      {result.type === 'file' && result.relativePath && (
+                        result.relativePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                          <img 
+                            src={`http://localhost:3001/data/${result.projectName}/${result.relativePath}`}
+                            alt={result.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // 如果图片加载失败，显示文件图标
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : (
+                          <div className="text-muted-foreground text-xs">
+                            {result.relativePath?.split('.').pop()?.toUpperCase() || 'FILE'}
+                          </div>
+                        )
+                      )}
+                      {result.type === 'note' && result.relativePath && (
+                        result.relativePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                          <img 
+                            src={`http://localhost:3001/data/${result.projectName}/${result.relativePath}`}
+                            alt={result.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // 如果图片加载失败，显示笔记图标
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : (
+                          <div className="text-green-500 text-lg">📝</div>
+                        )
+                      )}
+                      {result.type === 'note' && !result.relativePath && (
+                        <div className="text-green-500 text-lg">📝</div>
+                      )}
+                      {/* 备用图标，当图片加载失败时显示 */}
+                      <div className="hidden text-muted-foreground text-xs">
+                        {result.relativePath?.split('.').pop()?.toUpperCase() || 'FILE'}
+                      </div>
+                    </div>
+                    
+                    {/* 文件信息 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{result.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {result.type === 'file' ? (
+                          <span>文件: {result.relativePath}</span>
+                        ) : (
+                          <span>笔记: {result.snippet || result.notes || '包含匹配内容'}</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* 类型指示器 */}
+                    <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                      result.type === 'file' ? 'bg-blue-500' : 'bg-green-500'
+                    }`} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          
+          {/* 搜索加载状态 */}
+          {isSearching && (
+            <div className="absolute top-full right-0 mt-1 w-80 bg-background border border-border rounded-md shadow-lg z-50 p-4 text-center">
+              <div className="text-sm text-muted-foreground">搜索中...</div>
+            </div>
+          )}
+        </div>
+        
         <button 
           onClick={handleImportClick}
           disabled={!currentProject}
@@ -302,27 +516,35 @@ const Header = ({
        />
        
        {/* 批量删除对话框 */}
-        {currentProject && (
-          <BatchDeleteDialog
-            isOpen={isBatchDeleteDialogOpen}
-            onClose={() => setIsBatchDeleteDialogOpen(false)}
-            selectedFiles={selectedFiles}
-            projectId={currentProject.id}
-            currentPath={currentPath}
-            onDeleteComplete={handleBatchDeleteComplete}
-          />
-        )}
-       
-       {/* 批量移动对话框 */}
-        {currentProject && (
-          <BatchMoveDialog
-            isOpen={isBatchMoveDialogOpen}
-            onClose={() => setIsBatchMoveDialogOpen(false)}
-            selectedFiles={selectedFiles}
-            projectId={currentProject.id}
-            onMoveComplete={handleBatchMoveComplete}
-          />
-        )}</div>
+        <BatchDeleteDialog
+          isOpen={isBatchDeleteDialogOpen}
+          onClose={() => setIsBatchDeleteDialogOpen(false)}
+          projectId={currentProject?.id || 0}
+          selectedFiles={selectedFiles}
+          currentPath={currentPath}
+          onDeleteComplete={handleBatchDeleteComplete}
+        />
+        
+        {/* 批量移动对话框 */}
+        <BatchMoveDialog
+          isOpen={isBatchMoveDialogOpen}
+          onClose={() => setIsBatchMoveDialogOpen(false)}
+          projectId={currentProject?.id || 0}
+          selectedFiles={selectedFiles}
+          onMoveComplete={handleBatchMoveComplete}
+        />
+
+      {/* 文件详情模态框 */}
+      <FileDetailModal
+        file={selectedFile}
+        isOpen={isFileDetailOpen}
+        onClose={() => {
+          setIsFileDetailOpen(false);
+          setSelectedFile(null);
+        }}
+        projectId={currentProject?.id || 0}
+      />
+    </div>
   );
 };
 

@@ -160,6 +160,17 @@ class ApiService {
     return response.data.data || response.data;
   }
 
+  // 综合搜索API（文件名 + 笔记内容）
+  async search(query: string, projectId: number): Promise<{ query: string; results: any[]; total: number }> {
+    const response = await this.client.get<ApiResponse<{ query: string; results: any[]; total: number }>>('/search', {
+      params: {
+        query,
+        projectId
+      }
+    });
+    return response.data.data || response.data;
+  }
+
   // 文件上传API
   async uploadFile(formData: FormData): Promise<{ success: boolean; data?: any; error?: string; message?: string }> {
     try {
