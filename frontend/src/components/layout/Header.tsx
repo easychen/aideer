@@ -391,7 +391,7 @@ const Header = ({
                       {result.type === 'file' && result.relativePath && (
                         result.relativePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
                           <img 
-                            src={`http://localhost:3001/data/${result.projectName}/${result.relativePath}`}
+                            src={`${import.meta.env.VITE_RESOURCE_HOST || ''}/data/${result.projectName}/${result.relativePath}`}
                             alt={result.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -410,7 +410,7 @@ const Header = ({
                       {result.type === 'note' && result.relativePath && (
                         result.relativePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
                           <img 
-                            src={`http://localhost:3001/data/${result.projectName}/${result.relativePath}`}
+                            src={`${import.meta.env.VITE_RESOURCE_HOST || ''}/data/${result.projectName}/${result.relativePath}`}
                             alt={result.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
