@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Folder } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import FileGrid from '../components/file-grid/FileGrid';
 import FileDetailModal from '../components/file-detail/FileDetailModal';
 import ImportDialog from '../components/dialogs/ImportDialog';
@@ -23,6 +24,7 @@ interface OutletContext {
 }
 
 const MainPage = () => {
+  const { t } = useTranslation();
   const { currentProject, loading, fetchProjects } = useProjectStore();
   const { currentPath, setCurrentPath } = usePathContext();
   const { 
@@ -45,11 +47,28 @@ const MainPage = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [draggedFiles, setDraggedFiles] = useState<File[]>([]);
+  const [fileGridKey, setFileGridKey] = useState(0);
 
   useEffect(() => {
     // 初始化时加载项目列表
-    fetchProjects();
-  }, [fetchProjects]);
+    if (!currentProject) {
+      fetchProjects();
+    }
+  }, [currentProject, fetchProjects]);
+
+  // 监听文件更新触发器
+  useEffect(() => {
+    if (fileUpdateTrigger > 0) {
+      setFileGridKey(prev => prev + 1);
+    }
+  }, [fileUpdateTrigger]);
+
+  // 监听刷新触发器
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      setFileGridKey(prev => prev + 1);
+    }
+  }, [refreshTrigger]);
 
   const handleFileGridSelect = (file: FileItem) => {
     if (isManagementMode) {
@@ -68,42 +87,12 @@ const MainPage = () => {
     }
   };
 
-  // 监听刷新触发器，当导入完成时重新渲染组件
-  const [fileGridKey, setFileGridKey] = useState(0);
-  
-  // 监听全局文件更新事件
-  useEffect(() => {
-    const unsubscribe = onFileUpdate((updatedProjectId) => {
-      // 如果没有指定项目ID或者是当前项目，则刷新文件网格
-      if (!updatedProjectId || (currentProject && updatedProjectId === currentProject.id)) {
-        setFileGridKey(prev => prev + 1);
-      }
-    });
-    
-    return unsubscribe;
-  }, [currentProject, onFileUpdate]);
-  
-  // 监听全局文件更新触发器
-  useEffect(() => {
-    setFileGridKey(prev => prev + 1);
-  }, [fileUpdateTrigger]);
-  
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      console.log('Import completed, refreshing file list...');
-      // 通过改变key来强制FileGrid重新渲染和重新加载数据
-      setFileGridKey(prev => prev + 1);
-    }
-  }, [refreshTrigger]);
-
-
-
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">加载项目中...</p>
+          <p className="text-muted-foreground">{t('common.loadingProject')}</p>
         </div>
       </div>
     );
@@ -114,7 +103,7 @@ const MainPage = () => {
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <Folder className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">请选择一个项目</p>
+          <p className="text-muted-foreground">{t('project.selectProject')}</p>
         </div>
       </div>
     );
@@ -173,8 +162,8 @@ const MainPage = () => {
         <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-10 pointer-events-none">
           <div className="text-center">
             <div className="text-2xl mb-2">📁</div>
-            <p className="text-lg font-medium text-blue-600">释放文件以导入</p>
-            <p className="text-sm text-blue-500">将文件拖拽到此处自动导入到当前项目</p>
+            <p className="text-lg font-medium text-blue-600">{t('file.dropFilesToImport')}</p>
+            <p className="text-sm text-blue-500">{t('file.dragFilesHere')}</p>
           </div>
         </div>
       )}

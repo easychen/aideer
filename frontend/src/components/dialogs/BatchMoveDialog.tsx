@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Folder, FolderOpen, ChevronRight, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DirectoryNode } from '../../types/index';
 import { apiService } from '../../services/api';
 
@@ -98,6 +99,7 @@ export default function BatchMoveDialog({
   projectId,
   onMoveComplete
 }: BatchMoveDialogProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [directoryTree, setDirectoryTree] = useState<DirectoryNode[]>([]);
@@ -171,7 +173,7 @@ export default function BatchMoveDialog({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">批量移动文件</h2>
+          <h2 className="text-lg font-semibold">{t('dialog.batchMoveFiles')}</h2>
           <button
             onClick={handleClose}
             disabled={loading}

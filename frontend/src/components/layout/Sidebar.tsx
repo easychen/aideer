@@ -1,5 +1,6 @@
 import { ChevronDown, Folder, File, ChevronRight, RefreshCw, Minimize2, Plus, MoreHorizontal, FolderPlus, FolderTree, ListTree } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '../../stores/useProjectStore';
 import CreateFolderDialog from '../dialogs/CreateFolderDialog';
 import { apiService } from '../../services/api';
@@ -152,6 +153,7 @@ const FileTreeItem = ({ node, level = 0, projectId, showDirectoriesOnly = false,
 };
 
 const FileTree = ({ projectId, refreshTrigger, showDirectoriesOnly = false, currentPath }: { projectId: number; refreshTrigger?: number; showDirectoriesOnly?: boolean; currentPath?: string }) => {
+  const { t } = useTranslation();
   const [treeData, setTreeData] = useState<FileNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -244,7 +246,7 @@ const FileTree = ({ projectId, refreshTrigger, showDirectoriesOnly = false, curr
   if (treeData.length === 0) {
     return (
       <div className="text-center py-4 text-sm text-muted-foreground">
-        暂无文件
+        {t('file.noFiles')}
       </div>
     );
   }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw } from 'lucide-react';
+import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw, Globe, Check, ChevronDown } from 'lucide-react';
 import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useSettings } from '../../hooks/useSettings';
+import { useTranslation } from 'react-i18next';
 import { pluginManager } from '../../plugins/manager/PluginManager';
 import apiService from '../../services/api';
 import { Project } from '../../types';
@@ -14,11 +15,13 @@ interface SettingsDialogProps {
 type ActiveTab = 'interface' | 'api' | 'plugins' | 'maintenance' | 'about';
 
 const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<ActiveTab>('interface');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   
   const { themeMode, setTheme } = useTheme();
   const { settings, updateApiSettings } = useSettings();
@@ -53,6 +56,11 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
 
   const handleThemeChange = (mode: ThemeMode) => {
     setTheme(mode);
+  };
+
+  const handleLanguageChange = (languageCode: string) => {
+    i18n.changeLanguage(languageCode);
+    setIsLanguageDropdownOpen(false);
   };
 
   const handleSaveApiSettings = () => {
@@ -119,7 +127,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
       <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
         {/* 头部 */}
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-lg font-semibold">设置</h2>
+          <h2 className="text-lg font-semibold">{t('settings.settings')}</h2>
           <button
             onClick={handleClose}
             className="p-1 hover:bg-accent rounded transition-colors"
@@ -140,7 +148,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     : 'hover:bg-accent'
                 }`}
               >
-                界面设置
+                {t('settings.interface')}
               </button>
               <button
                 onClick={() => setActiveTab('api')}
@@ -150,7 +158,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     : 'hover:bg-accent'
                 }`}
               >
-                API 设置
+                {t('settings.api')}
               </button>
               <button
                 onClick={() => setActiveTab('plugins')}
@@ -162,7 +170,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
               >
                 <div className="flex items-center space-x-2">
                   <Puzzle className="w-4 h-4" />
-                  <span>插件管理</span>
+                  <span>{t('settings.plugins')}</span>
                 </div>
               </button>
               <button
@@ -175,7 +183,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
               >
                 <div className="flex items-center space-x-2">
                   <Database className="w-4 h-4" />
-                  <span>数据维护</span>
+                  <span>{t('settings.maintenance')}</span>
                 </div>
               </button>
               <button
@@ -186,7 +194,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     : 'hover:bg-accent'
                 }`}
               >
-                关于
+                {t('settings.about')}
               </button>
             </nav>
           </div>
@@ -197,50 +205,106 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
             {activeTab === 'interface' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-medium mb-4">主题设置</h3>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="theme"
-                        value="system"
-                        checked={themeMode === 'system'}
-                        onChange={() => handleThemeChange('system')}
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <Monitor className="w-4 h-4" />
-                        <span>跟随系统</span>
+                  <h3 className="text-lg font-medium mb-4">{t('settings.interface')}</h3>
+                  
+                  {/* 主题设置 */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">{t('settings.theme')}</label>
+                      <div className="mt-2 flex space-x-2">
+                        <button
+                          onClick={() => handleThemeChange('light')}
+                          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                            themeMode === 'light'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary hover:bg-secondary/80'
+                          }`}
+                        >
+                          <Sun className="w-4 h-4" />
+                          <span>{t('settings.lightMode')}</span>
+                        </button>
+                        <button
+                          onClick={() => handleThemeChange('dark')}
+                          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                            themeMode === 'dark'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary hover:bg-secondary/80'
+                          }`}
+                        >
+                          <Moon className="w-4 h-4" />
+                          <span>{t('settings.darkMode')}</span>
+                        </button>
+                        <button
+                          onClick={() => handleThemeChange('system')}
+                          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-colors ${
+                            themeMode === 'system'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-secondary hover:bg-secondary/80'
+                          }`}
+                        >
+                          <Monitor className="w-4 h-4" />
+                          <span>{t('settings.systemMode')}</span>
+                        </button>
                       </div>
-                    </label>
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="theme"
-                        value="light"
-                        checked={themeMode === 'light'}
-                        onChange={() => handleThemeChange('light')}
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <Sun className="w-4 h-4" />
-                        <span>浅色模式</span>
+                    </div>
+
+                    {/* 语言设置 */}
+                    <div>
+                      <label className="text-sm font-medium">{t('settings.language')}</label>
+                      <div className="mt-2 relative">
+                        <button
+                          onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                          className="flex items-center justify-between w-48 px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md text-sm transition-colors"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Globe className="w-4 h-4" />
+                            <span>
+                              {i18n.language === 'zh' ? '中文' : 
+                               i18n.language === 'en' ? 'English' : 
+                               t('settings.followSystem')}
+                            </span>
+                          </div>
+                          <ChevronDown className={`w-4 h-4 transition-transform ${isLanguageDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {isLanguageDropdownOpen && (
+                          <div className="absolute top-full left-0 mt-1 w-48 bg-popover border border-border rounded-md shadow-lg z-50">
+                            <div className="py-1">
+                              <button
+                                onClick={() => handleLanguageChange('system')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-accent transition-colors"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <Monitor className="w-4 h-4" />
+                                  <span>{t('settings.followSystem')}</span>
+                                </div>
+                                {i18n.language === 'system' && <Check className="w-4 h-4" />}
+                              </button>
+                              <button
+                                onClick={() => handleLanguageChange('zh')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-accent transition-colors"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <Globe className="w-4 h-4" />
+                                  <span>中文</span>
+                                </div>
+                                {i18n.language === 'zh' && <Check className="w-4 h-4" />}
+                              </button>
+                              <button
+                                onClick={() => handleLanguageChange('en')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-accent transition-colors"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <Globe className="w-4 h-4" />
+                                  <span>English</span>
+                                </div>
+                                {i18n.language === 'en' && <Check className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </label>
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="theme"
-                        value="dark"
-                        checked={themeMode === 'dark'}
-                        onChange={() => handleThemeChange('dark')}
-                        className="w-4 h-4 text-primary"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <Moon className="w-4 h-4" />
-                        <span>深色模式</span>
-                      </div>
-                    </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -250,19 +314,19 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
             {activeTab === 'api' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-medium mb-4">API 配置</h3>
+                  <h3 className="text-base font-medium mb-4">{t('settings.api')}</h3>
                   <div className="space-y-4">
                     {/* API Key */}
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        API Key
+                        {t('settings.apiKey')}
                       </label>
                       <div className="relative">
                         <input
                           type={showApiKey ? 'text' : 'password'}
                           value={localApiSettings.apiKey}
                           onChange={(e) => handleApiSettingChange('apiKey', e.target.value)}
-                          placeholder="请输入您的 API Key"
+                          placeholder={t('settings.enterApiKey')}
                           className="w-full px-3 py-2 pr-10 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
                         <button
@@ -278,7 +342,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     {/* API Base URL */}
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        API Base URL
+                        {t('settings.baseUrl')}
                       </label>
                       <input
                         type="text"
@@ -292,7 +356,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     {/* Model */}
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        模型
+                        {t('settings.model')}
                       </label>
                       <input
                         type="text"
@@ -307,7 +371,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                       onClick={handleSaveApiSettings}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
-                      保存设置
+                      {t('settings.saveSettings')}
                     </button>
                   </div>
                 </div>
@@ -318,52 +382,11 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
             {activeTab === 'plugins' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-medium mb-4">已安装插件</h3>
-                  <div className="space-y-3">
-                    {pluginManager.getAllPlugins().map((plugin) => (
-                      <div key={plugin.metadata.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-primary/10 rounded-md flex items-center justify-center">
-                              <Puzzle className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium">{plugin.metadata.name}</h4>
-                              <p className="text-sm text-muted-foreground">{plugin.metadata.description}</p>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-xs text-muted-foreground">版本: {plugin.metadata.version}</span>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">作者: {plugin.metadata.author}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={plugin.isEnabled}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  pluginManager.enable(plugin.metadata.id);
-                                } else {
-                                  pluginManager.disable(plugin.metadata.id);
-                                }
-                              }}
-                              className="w-4 h-4 text-primary"
-                            />
-                            <span className="text-sm">{plugin.isEnabled ? '已启用' : '已禁用'}</span>
-                          </label>
-                        </div>
-                      </div>
-                    ))}
+                  <h3 className="text-lg font-medium mb-4">{t('settings.plugins')}</h3>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Puzzle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>{t('settings.pluginsComingSoon')}</p>
                   </div>
-                  {pluginManager.getAllPlugins().length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Puzzle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>暂无已安装的插件</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -372,16 +395,16 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
             {activeTab === 'maintenance' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-medium mb-4">文件信息同步</h3>
+                  <h3 className="text-lg font-medium mb-4">{t('settings.maintenance')}</h3>
                   <div className="space-y-4">
                     {/* 项目选择 */}
                     <div className="p-4 border border-border rounded-lg bg-muted/50">
                       <div className="flex items-start space-x-3">
                         <Database className="w-5 h-5 text-primary mt-0.5" />
                         <div className="flex-1">
-                          <h4 className="font-medium mb-2">选择要同步的项目</h4>
+                          <h4 className="font-medium mb-2">{t('maintenance.selectProjects')}</h4>
                           <p className="text-sm text-muted-foreground mb-4">
-                            选择需要同步文件信息的项目。可以选择单个或多个项目进行同步。
+                            {t('maintenance.selectProjectsDescription')}
                           </p>
                           
                           {/* 全选/取消全选按钮 */}
@@ -390,14 +413,14 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                               onClick={handleSelectAllProjects}
                               className="text-sm text-primary hover:text-primary/80 transition-colors"
                             >
-                              全选
+                              {t('maintenance.selectAll')}
                             </button>
                             <span className="text-muted-foreground">|</span>
                             <button
                               onClick={handleDeselectAllProjects}
                               className="text-sm text-primary hover:text-primary/80 transition-colors"
                             >
-                              取消全选
+                              {t('maintenance.deselectAll')}
                             </button>
                           </div>
                           
@@ -421,13 +444,13 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                           
                           {projects.length === 0 && (
                             <div className="text-center py-4 text-muted-foreground text-sm">
-                              暂无项目
+                              {t('maintenance.noProjects')}
                             </div>
                           )}
                           
                           {/* 选择状态提示 */}
                           <div className="mt-3 text-sm text-muted-foreground">
-                            已选择 {selectedProjectIds.length} / {projects.length} 个项目
+                            {t('maintenance.selectedCount', { selected: selectedProjectIds.length, total: projects.length })}
                           </div>
                         </div>
                       </div>
@@ -438,10 +461,9 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                       <div className="flex items-start space-x-3">
                         <RefreshCw className="w-5 h-5 text-primary mt-0.5" />
                         <div className="flex-1">
-                          <h4 className="font-medium mb-2">同步文件路径信息</h4>
+                          <h4 className="font-medium mb-2">{t('maintenance.syncFileInfo')}</h4>
                           <p className="text-sm text-muted-foreground mb-4">
-                            扫描选中项目目录中的所有文件，并更新数据库中文件额外信息的路径字段。
-                            这个操作会确保文件移动或重命名后，相关的额外信息仍然能够正确关联。
+                            {t('maintenance.syncFileInfoDescription')}
                           </p>
                           <button
                             onClick={handleSyncFileInfo}
@@ -449,19 +471,19 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                             className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                            <span>{isSyncing ? '同步中...' : '开始同步'}</span>
+                            <span>{isSyncing ? t('maintenance.syncing') : t('maintenance.startSync')}</span>
                           </button>
                         </div>
                       </div>
                     </div>
                     
                     <div className="text-sm text-muted-foreground">
-                      <h4 className="font-medium mb-2">注意事项：</h4>
+                      <h4 className="font-medium mb-2">{t('maintenance.notes')}：</h4>
                       <ul className="space-y-1 list-disc list-inside">
-                        <li>同步过程可能需要一些时间，请耐心等待</li>
-                        <li>建议在文件结构发生较大变化后执行同步</li>
-                        <li>同步过程中请不要关闭应用程序</li>
-                        <li>请至少选择一个项目才能开始同步</li>
+                        <li>{t('maintenance.note1')}</li>
+                        <li>{t('maintenance.note2')}</li>
+                        <li>{t('maintenance.note3')}</li>
+                        <li>{t('maintenance.note4')}</li>
                       </ul>
                     </div>
                   </div>
@@ -472,18 +494,18 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
             {/* 关于 */}
             {activeTab === 'about' && (
               <div className="space-y-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Info className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">AiDeer</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    AI资产管理系统
-                  </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">版本:</span>
-                      <span>1.0.0</span>
+                <div>
+                  <h3 className="text-lg font-medium mb-4">{t('settings.about')}</h3>
+                  <div className="space-y-4">
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Info className="w-8 h-8 text-primary" />
+                      </div>
+                      <h4 className="text-lg font-semibold mb-2">{t('about.appName')}</h4>
+                      <p className="text-muted-foreground mb-4">{t('about.version')}: 1.0.0</p>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        {t('about.description')}
+                      </p>
                     </div>
                   </div>
                 </div>

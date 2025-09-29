@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiService } from '../../services/api';
 import { FileItem } from '../../types';
 
@@ -20,6 +21,7 @@ const BatchDeleteDialog = ({
   currentPath, 
   onDeleteComplete 
 }: BatchDeleteDialogProps) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState('');
@@ -119,7 +121,7 @@ const BatchDeleteDialog = ({
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center space-x-2">
             <AlertTriangle className="w-5 h-5 text-destructive" />
-            <h2 className="text-lg font-semibold">批量删除文件</h2>
+            <h2 className="text-lg font-semibold">{t('dialog.batchDeleteFiles')}</h2>
           </div>
           <button
             onClick={handleClose}

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, File, Folder, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useProjectStore } from '../../stores/useProjectStore';
 import { apiService } from '../../services/api';
 
@@ -26,6 +27,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   onImportComplete,
   initialFiles = []
 }) => {
+  const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -181,9 +183,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         {/* 头部 */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
-            <h2 className="text-lg font-semibold">导入文件</h2>
+            <h2 className="text-lg font-semibold">{t('dialog.importFiles')}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              导入到: {currentProject?.name}{currentPath ? ` / ${currentPath}` : ''}
+              {t('file.importTo')}: {currentProject?.name}{currentPath ? ` / ${currentPath}` : ''}
             </p>
           </div>
           <button
@@ -220,7 +222,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           {/* 文件列表 */}
           {selectedFiles.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">待导入文件 ({selectedFiles.length})</h3>
+              <h3 className="text-sm font-medium">{t('dialog.filesToImport', { count: selectedFiles.length })}</h3>
               <div className="max-h-64 overflow-y-auto space-y-1">
                 {selectedFiles.map((fileItem, index) => (
                   <div key={index} className="flex items-center space-x-3 p-2 bg-muted/30 rounded">

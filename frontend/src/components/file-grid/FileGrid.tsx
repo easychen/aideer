@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Grid3X3, List, Minus, Plus, Search, Image as ImageIcon, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { useProjectStore } from '../../stores/useProjectStore';
@@ -38,6 +39,7 @@ const FileGrid = ({
   onToggleFileSelection,
   updateAllFiles
 }: FileGridProps) => {
+  const { t } = useTranslation();
   const { currentProject } = useProjectStore();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,9 +306,9 @@ const FileGrid = ({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">
-              {currentPath ? `${currentPath.split('/').pop()} 目录` : '文件列表'}
+              {currentPath ? `${currentPath.split('/').pop()} ${t('file.directoryName')}` : t('file.fileList')}
             </h2>
-            <p className="text-sm text-muted-foreground">{sortedFiles.length} 个文件</p>
+            <p className="text-sm text-muted-foreground">{t('file.filesCount', { count: sortedFiles.length })}</p>
           </div>
           <div className="flex items-center space-x-4">
             {/* 搜索区域 */}
@@ -316,7 +318,7 @@ const FileGrid = ({
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="搜索文件名..."
+                    placeholder={t('file.searchFiles')}
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                     className="w-64 pl-10 pr-4 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -430,12 +432,12 @@ const FileGrid = ({
               }}
               className="px-3 py-1 text-sm border border-border rounded bg-background"
             >
-              <option value="name-asc">按名称 A-Z</option>
-              <option value="name-desc">按名称 Z-A</option>
-              <option value="size-asc">按大小 小-大</option>
-              <option value="size-desc">按大小 大-小</option>
-              <option value="modified-desc">按修改时间 新-旧</option>
-              <option value="modified-asc">按修改时间 旧-新</option>
+              <option value="name-asc">{t('file.sortByNameAsc')}</option>
+              <option value="name-desc">{t('file.sortByNameDesc')}</option>
+              <option value="size-asc">{t('file.sortBySizeAsc')}</option>
+              <option value="size-desc">{t('file.sortBySizeDesc')}</option>
+              <option value="modified-desc">{t('file.sortByModifiedDesc')}</option>
+              <option value="modified-asc">{t('file.sortByModifiedAsc')}</option>
             </select>
           </div>
         </div>
@@ -563,10 +565,10 @@ const FileGrid = ({
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium mb-2">暂无文件</h3>
+            <h3 className="text-lg font-medium mb-2">{t('file.noFiles')}</h3>
             <p className="text-sm text-muted-foreground">
-              {currentPath ? '当前目录下没有文件' : '项目中还没有文件'}
-            </p>
+               {currentPath ? t('file.noFilesInCurrentDirectory') : t('file.noFilesInProject')}
+             </p>
           </div>
         )}
       </div>
