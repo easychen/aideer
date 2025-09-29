@@ -74,7 +74,63 @@
     "sortBySizeAsc": "By Size Small-Large",
     "sortBySizeDesc": "By Size Large-Small",
     "sortByModifiedDesc": "By Modified New-Old",
-    "sortByModifiedAsc": "By Modified Old-New"
+    "sortByModifiedAsc": "By Modified Old-New",
+    "contextMenu": {
+      "preview": "Preview",
+      "copy": "Copy",
+      "download": "Download",
+      "rename": "Rename"
+    },
+    "detail": {
+      "preview": "Preview",
+      "fileInfo": "File Info",
+      "fileName": "File Name",
+      "size": "Size",
+      "type": "Type",
+      "modifiedTime": "Modified Time",
+      "path": "Path",
+      "unknown": "Unknown",
+      "renameFile": "Rename File",
+      "deleteFile": "Delete File",
+      "downloadFile": "Download File",
+      "renameDialog": {
+        "title": "Rename File:",
+        "placeholder": "Enter new file name",
+        "renaming": "Renaming...",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+      },
+      "deleteConfirm": "Are you sure you want to delete file \"{{fileName}}\"? This action cannot be undone.",
+      "previewContent": {
+        "imageLoadError": "Unable to load image",
+        "audioNotSupported": "Your browser does not support audio playback",
+        "videoNotSupported": "Your browser does not support video playback",
+        "documentPreview": "Document Preview",
+        "documentPreviewDesc": "Click the download button to view full content",
+        "unsupportedFileType": "Cannot preview this file type"
+      },
+      "errors": {
+        "renameFailed": "Failed to rename file",
+        "deleteFailed": "Failed to delete file"
+      }
+    },
+    "extraInfo": {
+      "starred": "Starred",
+      "notStarred": "Not Starred",
+      "tags": "Tags",
+      "addTag": "Add Tag",
+      "noTags": "No Tags",
+      "links": "Links",
+      "addLink": "Add Link",
+      "noLinks": "No Links",
+      "notes": "Notes",
+      "addNote": "Add Note",
+      "noNotes": "No Notes",
+      "loading": "Loading...",
+      "tagPlaceholder": "Enter tag name",
+      "linkPlaceholder": "Enter link URL",
+      "notePlaceholder": "Enter note content"
+    }
   },
   "search": {
     "searchFilesAndNotes": "Search files and notes...",
@@ -156,5 +212,87 @@
     "appName": "AiDeer",
     "version": "Version",
     "description": "An AI asset management system that helps you better organize and manage project files."
+  },
+  "plugins": {
+    "characterCard": {
+      "title": "Character Card",
+      "loading": "Loading...",
+      "noData": "No character card data found",
+      "parseError": "Failed to parse character card data",
+      "invalidFormat": "Invalid character card format",
+      "unsupportedFormat": "Unsupported file format",
+      "pngParseError": "PNG file parsing failed",
+      "noCharacterData": "No character data found in PNG file",
+      "invalidCharacterData": "Invalid character data format",
+      "saveSuccess": "Save successful",
+      "saveError": "Save failed",
+      "updateSuccess": "Update successful",
+      "updateError": "Update failed",
+      "fields": {
+        "name": "Name",
+        "creator": "Creator",
+        "version": "Version",
+        "gender": "Gender",
+        "tags": "Tags",
+        "description": "Description",
+        "personality": "Personality",
+        "scenario": "Scenario",
+        "dialogueExamples": "Dialogue Examples",
+        "greetings": "Greetings",
+        "systemPrompt": "System Prompt",
+        "creatorNotes": "Creator Notes",
+        "history": "History",
+        "worldBookSettings": "World Book Settings",
+        "worldBookEntries": "World Book Entries"
+      },
+      "actions": {
+        "save": "Save",
+        "update": "Update",
+        "copy": "Copy",
+        "download": "Download"
+      }
+    },
+    "imagePrompt": {
+      "title": "Image Prompt",
+      "loading": "Loading...",
+      "noData": "No prompt data found",
+      "parseError": "Failed to parse prompt data",
+      "invalidFormat": "Invalid prompt format",
+      "unsupportedFormat": "Unsupported file format",
+      "pngParseError": "PNG file parsing failed",
+      "jpegParseError": "JPEG file parsing failed",
+      "noPromptData": "No prompt data found in image file",
+      "invalidPromptData": "Invalid prompt data format",
+      "copySuccess": "Copy successful",
+      "copyError": "Copy failed",
+      "downloadSuccess": "Download successful",
+      "downloadError": "Download failed",
+      "fields": {
+        "positivePrompt": "Positive Prompt",
+        "negativePrompt": "Negative Prompt",
+        "steps": "Steps",
+        "sampler": "Sampler",
+        "seed": "Seed",
+        "size": "Size",
+        "model": "Model",
+        "software": "Software",
+        "workflow": "Workflow",
+        "rawData": "Raw Data",
+        "imageSource": "Image Source"
+      },
+      "actions": {
+        "copy": "Copy",
+        "download": "Download",
+        "expandAll": "Expand All",
+        "collapseAll": "Collapse All"
+      },
+      "jsonViewer": {
+        "title": "JSON Data Viewer",
+        "expandAll": "Expand All",
+        "collapseAll": "Collapse All",
+        "copy": "Copy",
+        "download": "Download"
+      }
+    }
   }
 }

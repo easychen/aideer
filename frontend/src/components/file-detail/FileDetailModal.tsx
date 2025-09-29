@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { X, Download, FileText, Image, Music, Video, File, Edit, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { FileItem } from '../../types/index';
 import { apiService } from '../../services/api';
 import { useFileUpdate } from '../../contexts/FileUpdateContext';
@@ -17,6 +18,7 @@ interface FileDetailModalProps {
 }
 
 const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalProps) => {
+  const { t } = useTranslation();
   const { currentProject } = useProjectStore();
   const [leftWidth, setLeftWidth] = useState(30); // 左侧栏宽度百分比
   const [rightWidth, setRightWidth] = useState(25); // 右侧栏宽度百分比
@@ -109,7 +111,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             />
             <div className="hidden items-center justify-center h-full bg-muted">
               <Image className="w-12 h-12 text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">无法加载图片</span>
+              <span className="ml-2 text-muted-foreground">{t('file.detail.previewContent.imageLoadError')}</span>
             </div>
           </div>
         );
@@ -124,7 +126,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
               preload="none"
             >
               <source src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`} />
-              您的浏览器不支持音频播放
+              {t('file.detail.previewContent.audioNotSupported')}
             </audio>
           </div>
         );
@@ -138,7 +140,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
               preload="metadata"
             >
               <source src={`${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`} />
-              您的浏览器不支持视频播放
+              {t('file.detail.previewContent.videoNotSupported')}
             </video>
           </div>
         );
@@ -148,8 +150,8 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
           <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
             <div className="text-center">
               <FileText className="w-16 h-16 text-green-500 mx-auto mb-2" />
-              <p className="text-muted-foreground">文档预览</p>
-              <p className="text-sm text-muted-foreground mt-1">点击下载按钮查看完整内容</p>
+              <p className="text-muted-foreground">{t('file.detail.previewContent.documentPreview')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('file.detail.previewContent.documentPreviewDesc')}</p>
             </div>
           </div>
         );
@@ -159,7 +161,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
           <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
             <div className="text-center">
               <File className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">无法预览此文件类型</p>
+              <p className="text-muted-foreground">{t('file.detail.previewContent.unsupportedFileType')}</p>
             </div>
           </div>
         );
@@ -195,8 +197,8 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
         triggerFileUpdate();
         setIsRenaming(false);
       } catch (error) {
-        console.error('重命名文件失败:', error);
-        console.error('重命名文件失败:', error);
+        console.error(t('file.detail.errors.renameFailed'), error);
+        console.error(t('file.detail.errors.renameFailed'), error);
       } finally {
         setIsLoading(false);
       }
@@ -209,7 +211,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
   };
 
   const handleDelete = async () => {
-    if (confirm(`确定要删除文件 "${file.name}" 吗？此操作不可撤销。`)) {
+    if (confirm(t('file.detail.deleteConfirm', { fileName: file.name }))) {
       try {
         await apiService.deleteFile(file.id.toString(), projectId);
         // 触发文件列表刷新
@@ -217,8 +219,8 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
         onClose(); // 删除后关闭模态框
         // 文件删除成功，通过onClose关闭模态框已经给用户反馈
       } catch (error) {
-        console.error('删除文件失败:', error);
-        console.error('删除文件失败:', error);
+        console.error(t('file.detail.errors.deleteFailed'), error);
+        console.error(t('file.detail.errors.deleteFailed'), error);
       }
     }
   };
@@ -271,21 +273,21 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             <button
               onClick={handleRename}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="重命名文件"
+              title={t('file.detail.renameFile')}
             >
               <Edit className="w-5 h-5" />
             </button>
             <button
               onClick={handleDelete}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="删除文件"
+              title={t('file.detail.deleteFile')}
             >
               <Trash2 className="w-5 h-5" />
             </button>
             <button
               onClick={handleDownload}
               className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="下载文件"
+              title={t('file.detail.downloadFile')}
             >
               <Download className="w-5 h-5" />
             </button>
@@ -302,13 +304,13 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
         {isRenaming && (
           <div className="p-4 border-b border-border bg-muted/50">
             <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium">重命名文件:</span>
+              <span className="text-sm font-medium">{t('file.detail.renameDialog.title')}</span>
               <input
                 type="text"
                 value={newFileName}
                 onChange={(e) => setNewFileName(e.target.value)}
                 className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="请输入新的文件名"
+                placeholder={t('file.detail.renameDialog.placeholder')}
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -323,14 +325,14 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
                 disabled={isLoading || !newFileName || newFileName === file.name}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? '重命名中...' : '确认'}
+                {isLoading ? t('file.detail.renameDialog.renaming') : t('file.detail.renameDialog.confirm')}
               </button>
               <button
                 onClick={cancelRename}
                 disabled={isLoading}
                 className="px-4 py-2 border border-border rounded-md text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                取消
+                {t('file.detail.renameDialog.cancel')}
               </button>
             </div>
           </div>
@@ -343,7 +345,7 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             {/* 预览区域 */}
             <div className="flex-1 p-4 overflow-hidden">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                预览
+                {t('file.detail.preview')}
               </h3>
               <div className="h-full">
                 {renderPreview()}
@@ -353,27 +355,27 @@ const FileDetailModal = ({ file, isOpen, onClose, projectId }: FileDetailModalPr
             {/* 文件信息 */}
             <div className="border-t border-border p-4 max-h-[40%] overflow-y-auto">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                文件信息
+                {t('file.detail.fileInfo')}
               </h3>
               <div className="space-y-2">
                 <div className="flex items-start space-x-3">
-                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">文件名:</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">{t('file.detail.fileName')}:</span>
                   <span className="text-sm font-medium flex-1 truncate" title={file.name}>{file.name}</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">大小:</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">{t('file.detail.size')}:</span>
                   <span className="text-sm font-medium flex-1">{formatFileSize(file.size)}</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">类型:</span>
-                  <span className="text-sm font-medium flex-1">{file.name.split('.').pop()?.toUpperCase() || '未知'}</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">{t('file.detail.type')}:</span>
+                  <span className="text-sm font-medium flex-1">{file.name.split('.').pop()?.toUpperCase() || t('file.detail.unknown')}</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">修改时间:</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">{t('file.detail.modifiedTime')}:</span>
                   <span className="text-sm font-medium flex-1">{formatDate(file.lastModified)}</span>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">路径:</span>
+                  <span className="text-sm text-muted-foreground flex-shrink-0 w-16">{t('file.detail.path')}:</span>
                   <span className="text-sm font-medium flex-1 truncate" title={file.relativePath}>
                     {file.relativePath}
                   </span>

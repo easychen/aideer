@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Edit2, Trash2, Download, Eye } from 'lucide-react';
+import { Edit2, Trash2, Download, Eye, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ContextMenuProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ContextMenuProps {
   onDelete?: () => void;
   onDownload?: () => void;
   onPreview?: () => void;
+  onCopy?: () => void;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -18,9 +20,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onRename,
   onDelete,
   onDownload,
-  onPreview
+  onPreview,
+  onCopy
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,25 +55,31 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   const menuItems = [
     {
       icon: Eye,
-      label: '预览',
+      label: t('file.contextMenu.preview'),
       onClick: onPreview,
       show: !!onPreview
     },
     {
+      icon: Copy,
+      label: t('file.contextMenu.copy'),
+      onClick: onCopy,
+      show: !!onCopy
+    },
+    {
       icon: Download,
-      label: '下载',
+      label: t('file.contextMenu.download'),
       onClick: onDownload,
       show: !!onDownload
     },
     {
       icon: Edit2,
-      label: '重命名',
+      label: t('file.contextMenu.rename'),
       onClick: onRename,
       show: !!onRename
     },
     {
       icon: Trash2,
-      label: '删除',
+      label: t('common.delete'),
       onClick: onDelete,
       show: !!onDelete,
       className: 'text-destructive hover:bg-destructive hover:text-destructive-foreground'

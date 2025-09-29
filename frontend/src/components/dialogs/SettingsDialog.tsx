@@ -3,9 +3,9 @@ import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw, 
 import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useSettings } from '../../hooks/useSettings';
 import { useTranslation } from 'react-i18next';
-import { pluginManager } from '../../plugins/manager/PluginManager';
 import apiService from '../../services/api';
 import { Project } from '../../types';
+import { pluginManager } from '../../plugins/manager/PluginManager';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [plugins, setPlugins] = useState(pluginManager.getAllPlugins());
   
   const { themeMode, setTheme } = useTheme();
   const { settings, updateApiSettings } = useSettings();
@@ -47,6 +48,8 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
 
     if (isOpen) {
       loadProjects();
+      // 刷新插件列表
+      setPlugins(pluginManager.getAllPlugins());
     }
   }, [isOpen]);
 
@@ -80,6 +83,16 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
         ? prev.filter(id => id !== projectId)
         : [...prev, projectId]
     );
+  };
+
+  const handlePluginToggle = (pluginId: string, isEnabled: boolean) => {
+    if (isEnabled) {
+      pluginManager.enable(pluginId);
+    } else {
+      pluginManager.disable(pluginId);
+    }
+    // 刷新插件列表
+    setPlugins(pluginManager.getAllPlugins());
   };
 
   const handleSelectAllProjects = () => {
@@ -383,10 +396,45 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-4">{t('settings.plugins')}</h3>
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Puzzle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>{t('settings.pluginsComingSoon')}</p>
+                  <div className="space-y-4">
+                    {plugins.map((plugin) => (
+                      <div key={plugin.metadata.id} className="p-4 border border-border rounded-lg bg-muted/50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                              <Puzzle className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium">{plugin.metadata.name}</h4>
+                              <p className="text-sm text-muted-foreground">{plugin.metadata.description}</p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className="text-xs text-muted-foreground">版本: {plugin.metadata.version}</span>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <span className="text-xs text-muted-foreground">作者: {plugin.metadata.author}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={plugin.isEnabled}
+                                onChange={(e) => handlePluginToggle(plugin.metadata.id, e.target.checked)}
+                                className="w-4 h-4 text-primary"
+                              />
+                              <span className="text-sm">{plugin.isEnabled ? '已启用' : '已禁用'}</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                  {plugins.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Puzzle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>暂无已安装的插件</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -502,7 +550,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                         <Info className="w-8 h-8 text-primary" />
                       </div>
                       <h4 className="text-lg font-semibold mb-2">{t('about.appName')}</h4>
-                      <p className="text-muted-foreground mb-4">{t('about.version')}: 1.0.0</p>
+                      <p className="text-muted-foreground mb-4">{t('about.version')}: 1.0.3</p>
                       <p className="text-sm text-muted-foreground max-w-md mx-auto">
                         {t('about.description')}
                       </p>

@@ -1,6 +1,6 @@
 {
   "name": "aideer",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "数字资产管理工具 - Digital Asset Management Tool",
   "main": "dist/electron/main.js",
   "type": "module",

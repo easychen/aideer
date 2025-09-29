@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Tag, Link, FileText, Save, X, Plus, Edit3 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { FileItem } from '../../types/index';
 import apiService from '../../services/api';
 
@@ -23,6 +24,7 @@ interface FileExtraInfoProps {
 }
 
 const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId }) => {
+  const { t } = useTranslation();
   const [extraInfo, setExtraInfo] = useState<FileExtraInfo>({
     blake3Hash: '',
     projectId: projectId,
@@ -172,7 +174,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-muted-foreground">加载中...</div>
+        <div className="text-muted-foreground">{t('file.extraInfo.loading')}</div>
       </div>
     );
   }
@@ -184,7 +186,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         <div className="flex items-center space-x-2">
           <FileText className="w-4 h-4" />
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            文件信息
+            {t('file.detail.fileInfo')}
           </h3>
         </div>
       </div>
@@ -193,7 +195,9 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {/* 星标 */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">星标</span>
+          <span className="text-sm font-medium">
+            {extraInfo.starred ? t('file.extraInfo.starred') : t('file.extraInfo.notStarred')}
+          </span>
           <button
             onClick={toggleStar}
             className={`p-1 rounded transition-colors ${
@@ -209,7 +213,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         {/* 标签 */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">标签</span>
+            <span className="text-sm font-medium">{t('file.extraInfo.tags')}</span>
             <button
               onClick={() => setIsAddingTag(true)}
               className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
@@ -224,7 +228,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
                 type="text"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
-                placeholder="输入标签"
+                placeholder={t('file.extraInfo.tagPlaceholder')}
                 className="flex-1 px-2 py-1 border border-border rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
                 onKeyDown={(e) => {
@@ -269,7 +273,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         {/* 链接 */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">链接</span>
+            <span className="text-sm font-medium">{t('file.extraInfo.links')}</span>
             <button
               onClick={() => setIsAddingLink(true)}
               className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
@@ -284,7 +288,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
                 type="url"
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
-                placeholder="输入链接URL"
+                placeholder={t('file.extraInfo.linkPlaceholder')}
                 className="flex-1 px-2 py-1 border border-border rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
                 onKeyDown={(e) => {
@@ -334,7 +338,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
         {/* 笔记 */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">笔记</span>
+            <span className="text-sm font-medium">{t('file.extraInfo.notes')}</span>
             {!isEditingNotes && (
               <button
                 onClick={startEditingNotes}
@@ -350,7 +354,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
               <textarea
                 value={notesValue}
                 onChange={(e) => setNotesValue(e.target.value)}
-                placeholder="添加笔记..."
+                placeholder={t('file.extraInfo.notePlaceholder')}
                 className="w-full h-32 px-3 py-2 border border-border rounded text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
               />
@@ -361,7 +365,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
                   className="flex items-center space-x-1 px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50"
                 >
                   <Save className="w-3 h-3" />
-                  <span>{isSavingNotes ? '保存中...' : '保存'}</span>
+                  <span>{isSavingNotes ? t('common.loading') : t('common.save')}</span>
                 </button>
                 <button
                   onClick={cancelEditingNotes}
@@ -369,7 +373,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
                   className="flex items-center space-x-1 px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80 disabled:opacity-50"
                 >
                   <X className="w-3 h-3" />
-                  <span>取消</span>
+                  <span>{t('common.cancel')}</span>
                 </button>
               </div>
             </div>
@@ -379,7 +383,7 @@ const FileExtraInfoComponent: React.FC<FileExtraInfoProps> = ({ file, projectId 
               className="w-full min-h-[80px] px-3 py-2 border border-border rounded text-sm cursor-pointer hover:bg-muted/50 transition-colors"
             >
               {extraInfo.notes || (
-                <span className="text-muted-foreground">点击添加笔记...</span>
+                <span className="text-muted-foreground">{t('file.extraInfo.addNote')}</span>
               )}
             </div>
           )}

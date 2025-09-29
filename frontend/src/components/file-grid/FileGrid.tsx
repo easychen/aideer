@@ -170,6 +170,67 @@ const FileGrid = ({
     document.body.removeChild(link);
   };
 
+  const handleCopy = async (file: FileItem) => {
+    try {
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+      const apiBaseUrl = import.meta.env.VITE_RESOURCE_HOST || '';
+      const fileUrl = `${apiBaseUrl}/data/${currentProject?.path || 'mybook'}/${file.relativePath}`;
+      
+      // 图片文件类型
+      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif'];
+      // 文本文件类型
+      const textExtensions = ['txt', 'md', 'json', 'js', 'ts', 'jsx', 'tsx', 'css', 'html', 'xml', 'yaml', 'yml'];
+      
+      if (imageExtensions.includes(extension)) {
+        // 复制图片
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              [blob.type]: blob
+            })
+          ]);
+          console.log('图片已复制到剪贴板');
+        } else {
+          throw new Error('浏览器不支持图片复制功能');
+        }
+      } else if (textExtensions.includes(extension)) {
+        // 复制文本文件内容
+        const response = await fetch(fileUrl);
+        const text = await response.text();
+        
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(text);
+          console.log('文本内容已复制到剪贴板');
+        } else {
+          // 降级方案
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          console.log('文本内容已复制到剪贴板（降级方案）');
+        }
+      } else {
+        console.log('不支持复制此类型的文件');
+      }
+    } catch (error) {
+      console.error('复制文件失败:', error);
+      console.error('复制文件失败，请重试');
+    }
+  };
+
+  // 判断文件是否支持复制
+  const isCopySupported = (file: FileItem) => {
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif'];
+    const textExtensions = ['txt', 'md', 'json', 'js', 'ts', 'jsx', 'tsx', 'css', 'html', 'xml', 'yaml', 'yml'];
+    return imageExtensions.includes(extension) || textExtensions.includes(extension);
+  };
+
   const handlePreview = (file: FileItem) => {
     onFileSelect?.(file);
   };
@@ -579,6 +640,7 @@ const FileGrid = ({
          position={contextMenu.position}
          onClose={handleCloseContextMenu}
          onPreview={contextMenu.file ? () => handleContextMenuAction(() => handlePreview(contextMenu.file!)) : undefined}
+         onCopy={contextMenu.file && isCopySupported(contextMenu.file) ? () => handleContextMenuAction(() => handleCopy(contextMenu.file!)) : undefined}
          onDownload={contextMenu.file ? () => handleContextMenuAction(() => handleDownload(contextMenu.file!)) : undefined}
          onRename={contextMenu.file ? () => handleContextMenuAction(() => handleRename(contextMenu.file!)) : undefined}
          onDelete={contextMenu.file ? () => handleContextMenuAction(() => handleDelete(contextMenu.file!)) : undefined}

@@ -82,7 +82,63 @@
     "sortBySizeAsc": "按大小 小-大",
     "sortBySizeDesc": "按大小 大-小",
     "sortByModifiedDesc": "按修改时间 新-旧",
-    "sortByModifiedAsc": "按修改时间 旧-新"
+    "sortByModifiedAsc": "按修改时间 旧-新",
+    "contextMenu": {
+      "preview": "预览",
+      "copy": "复制",
+      "download": "下载",
+      "rename": "重命名"
+    },
+    "detail": {
+      "preview": "预览",
+      "fileInfo": "文件信息",
+      "fileName": "文件名",
+      "size": "大小",
+      "type": "类型",
+      "modifiedTime": "修改时间",
+      "path": "路径",
+      "unknown": "未知",
+      "renameFile": "重命名文件",
+      "deleteFile": "删除文件",
+      "downloadFile": "下载文件",
+      "renameDialog": {
+        "title": "重命名文件:",
+        "placeholder": "请输入新的文件名",
+        "renaming": "重命名中...",
+        "confirm": "确认",
+        "cancel": "取消"
+      },
+      "deleteConfirm": "确定要删除文件 \"{{fileName}}\" 吗？此操作不可撤销。",
+      "previewContent": {
+        "imageLoadError": "无法加载图片",
+        "audioNotSupported": "您的浏览器不支持音频播放",
+        "videoNotSupported": "您的浏览器不支持视频播放",
+        "documentPreview": "文档预览",
+        "documentPreviewDesc": "点击下载按钮查看完整内容",
+        "unsupportedFileType": "无法预览此文件类型"
+      },
+      "errors": {
+        "renameFailed": "重命名文件失败",
+        "deleteFailed": "删除文件失败"
+      }
+    },
+    "extraInfo": {
+      "starred": "已收藏",
+      "notStarred": "未收藏",
+      "tags": "标签",
+      "addTag": "添加标签",
+      "noTags": "暂无标签",
+      "links": "链接",
+      "addLink": "添加链接",
+      "noLinks": "暂无链接",
+      "notes": "笔记",
+      "addNote": "添加笔记",
+      "noNotes": "暂无笔记",
+      "loading": "加载中...",
+      "tagPlaceholder": "输入标签名称",
+      "linkPlaceholder": "输入链接地址",
+      "notePlaceholder": "输入笔记内容"
+    }
   },
   "search": {
     "searchPlaceholder": "搜索...",
@@ -173,5 +229,87 @@
     "appName": "AiDeer",
     "version": "版本",
     "description": "AI资产管理系统，帮助您更好地组织和管理项目文件。"
+  },
+  "plugins": {
+    "characterCard": {
+      "title": "角色卡片",
+      "loading": "加载中...",
+      "noData": "未找到角色卡片数据",
+      "parseError": "解析角色卡片数据失败",
+      "invalidFormat": "无效的角色卡片格式",
+      "unsupportedFormat": "不支持的文件格式",
+      "pngParseError": "PNG 文件解析失败",
+      "noCharacterData": "PNG 文件中未找到角色数据",
+      "invalidCharacterData": "无效的角色数据格式",
+      "saveSuccess": "保存成功",
+      "saveError": "保存失败",
+      "updateSuccess": "更新成功",
+      "updateError": "更新失败",
+      "fields": {
+        "name": "名称",
+        "creator": "创建者",
+        "version": "版本",
+        "gender": "性别",
+        "tags": "标签",
+        "description": "描述",
+        "personality": "性格",
+        "scenario": "场景",
+        "dialogueExamples": "对话示例",
+        "greetings": "问候语",
+        "systemPrompt": "系统提示",
+        "creatorNotes": "创建者备注",
+        "history": "历史记录",
+        "worldBookSettings": "世界书设置",
+        "worldBookEntries": "世界书条目"
+      },
+      "actions": {
+        "save": "保存",
+        "update": "更新",
+        "copy": "复制",
+        "download": "下载"
+      }
+    },
+    "imagePrompt": {
+      "title": "图像提示词",
+      "loading": "加载中...",
+      "noData": "未找到提示词数据",
+      "parseError": "解析提示词数据失败",
+      "invalidFormat": "无效的提示词格式",
+      "unsupportedFormat": "不支持的文件格式",
+      "pngParseError": "PNG 文件解析失败",
+      "jpegParseError": "JPEG 文件解析失败",
+      "noPromptData": "图像文件中未找到提示词数据",
+      "invalidPromptData": "无效的提示词数据格式",
+      "copySuccess": "复制成功",
+      "copyError": "复制失败",
+      "downloadSuccess": "下载成功",
+      "downloadError": "下载失败",
+      "fields": {
+        "positivePrompt": "正向提示词",
+        "negativePrompt": "负向提示词",
+        "steps": "步数",
+        "sampler": "采样器",
+        "seed": "种子",
+        "size": "尺寸",
+        "model": "模型",
+        "software": "软件",
+        "workflow": "工作流",
+        "rawData": "原始数据",
+        "imageSource": "图像来源"
+      },
+      "actions": {
+        "copy": "复制",
+        "download": "下载",
+        "expandAll": "展开全部",
+        "collapseAll": "收起全部"
+      },
+      "jsonViewer": {
+        "title": "JSON 数据查看器",
+        "expandAll": "展开全部",
+        "collapseAll": "收起全部",
+        "copy": "复制",
+        "download": "下载"
+      }
+    }
   }
 }
