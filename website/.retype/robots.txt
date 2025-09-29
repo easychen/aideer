@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aideer.com/sitemap.xml.gz

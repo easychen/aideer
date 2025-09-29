@@ -1,0 +1,26 @@
+input: .
+output: .retype
+
+url: https://aideer.ft07.com
+branding:
+  title: aiDeer
+  label: 智能文件管理系统
+
+meta:
+  title: " | aiDeer - 智能文件管理系统"
+
+links:
+- text: GitHub
+  link: https://github.com/easychen/aideer
+  icon: mark-github
+
+footer:
+  copyright: "&copy; Copyright {{ year }}. All rights reserved."
+
+edit:
+  repo: "https://github.com/easychen/aideer"
+  base: /website
+  branch: main
+  label: 编辑此页
+
+poweredByRetype: true
