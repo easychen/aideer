@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw, Globe, Check, ChevronDown } from 'lucide-react';
+import { X, Monitor, Sun, Moon, Eye, EyeOff, Info, Puzzle, Database, RefreshCw, Globe, Check, ChevronDown, Settings } from 'lucide-react';
 import { useTheme, ThemeMode } from '../../hooks/useTheme';
 import { useSettings } from '../../hooks/useSettings';
 import { useTranslation } from 'react-i18next';
@@ -161,7 +161,10 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     : 'hover:bg-accent'
                 }`}
               >
-                {t('settings.interface')}
+                <div className="flex items-center space-x-2">
+                  <Monitor className="w-4 h-4" />
+                  <span>{t('settings.interface')}</span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('api')}
@@ -171,7 +174,10 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     : 'hover:bg-accent'
                 }`}
               >
-                {t('settings.api')}
+                <div className="flex items-center space-x-2">
+                  <Settings className="w-4 h-4" />
+                  <span>{t('settings.api')}</span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('plugins')}
@@ -207,7 +213,10 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                     : 'hover:bg-accent'
                 }`}
               >
-                {t('settings.about')}
+                <div className="flex items-center space-x-2">
+                  <Info className="w-4 h-4" />
+                  <span>{t('settings.about')}</span>
+                </div>
               </button>
             </nav>
           </div>
@@ -408,9 +417,9 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                               <h4 className="font-medium">{plugin.metadata.name}</h4>
                               <p className="text-sm text-muted-foreground">{plugin.metadata.description}</p>
                               <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-xs text-muted-foreground">版本: {plugin.metadata.version}</span>
+                                <span className="text-xs text-muted-foreground">{t('settings.pluginVersion')}: {plugin.metadata.version}</span>
                                 <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">作者: {plugin.metadata.author}</span>
+                                <span className="text-xs text-muted-foreground">{t('settings.pluginAuthor')}: {plugin.metadata.author}</span>
                               </div>
                             </div>
                           </div>
@@ -422,7 +431,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                                 onChange={(e) => handlePluginToggle(plugin.metadata.id, e.target.checked)}
                                 className="w-4 h-4 text-primary"
                               />
-                              <span className="text-sm">{plugin.isEnabled ? '已启用' : '已禁用'}</span>
+                              <span className="text-sm">{plugin.isEnabled ? t('settings.pluginEnabled') : t('settings.pluginDisabled')}</span>
                             </label>
                           </div>
                         </div>
@@ -432,7 +441,7 @@ const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                   {plugins.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Puzzle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>暂无已安装的插件</p>
+                      <p>{t('settings.noPluginsInstalled')}</p>
                     </div>
                   )}
                 </div>

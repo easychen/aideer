@@ -143,10 +143,10 @@
   },
   "settings": {
     "settings": "Settings",
-    "interface": "Interface Settings",
-    "api": "API Settings",
-    "plugins": "Plugin Management",
-    "maintenance": "Data Maintenance",
+    "interface": "Interface",
+    "api": "API",
+    "plugins": "Plugin",
+    "maintenance": "Data",
     "about": "About",
     "theme": "Theme",
     "lightMode": "Light Mode",
@@ -163,7 +163,12 @@
     "saveSettings": "Save Settings",
     "pluginsComingSoon": "Plugin functionality coming soon...",
     "chinese": "中文",
-    "english": "English"
+    "english": "English",
+    "pluginVersion": "Version",
+    "pluginAuthor": "Author",
+    "pluginEnabled": "Enabled",
+    "pluginDisabled": "Disabled",
+    "noPluginsInstalled": "No plugins installed"
   },
   "dialog": {
     "createProject": "Create Project",

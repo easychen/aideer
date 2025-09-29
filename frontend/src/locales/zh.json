@@ -173,7 +173,12 @@
     "saveSettings": "保存设置",
     "pluginsComingSoon": "插件功能即将推出...",
     "chinese": "中文",
-    "english": "English"
+    "english": "English",
+    "pluginVersion": "版本",
+    "pluginAuthor": "作者",
+    "pluginEnabled": "已启用",
+    "pluginDisabled": "已禁用",
+    "noPluginsInstalled": "暂无已安装的插件"
   },
   "dialog": {
     "createProject": "创建项目",
