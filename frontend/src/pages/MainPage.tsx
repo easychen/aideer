@@ -41,7 +41,8 @@ const MainPage = () => {
   } = useOutletContext<OutletContext>();
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const { fileUpdateTrigger, onFileUpdate } = useFileUpdate();
+  // const { fileUpdateTrigger, onFileUpdate } = useFileUpdate();
+  const { fileUpdateTrigger } = useFileUpdate();
   
   // 拖拽相关状态
   const [isDragOver, setIsDragOver] = useState(false);

@@ -75,9 +75,9 @@ const HomePage = () => {
     navigate(`/project/${project.id}`);
   };
 
-  const handleCreateProject = () => {
-    setShowCreateDialog(true);
-  };
+  // const handleCreateProject = () => {
+  //   setShowCreateDialog(true);
+  // };
 
   const handleCreateDialogClose = () => {
     setShowCreateDialog(false);
