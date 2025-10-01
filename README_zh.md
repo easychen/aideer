@@ -75,7 +75,7 @@ AiDeer 是一款专业的 AI 资产管理工具，帮助你统一收集、整理
 ### 下载选项
 
 #### 桌面应用程序
-[WebSite](https://ad.level06.com/)
+[WebSite](https://aid.level06.com/)
 
 #### Docker 部署
 

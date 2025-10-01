@@ -75,7 +75,7 @@ Completely open source and free, AGPL-3.0 license, community-driven development,
 ### Download Options
 
 #### Desktop Applications
-[WebSite](https://ad.level06.com/)
+[WebSite](https://aid.level06.com/)
 
 #### Docker Deployment
 
