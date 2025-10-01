@@ -3,4 +3,6 @@ dist
 backend/data
 electron/resources
 electron/data
+docker/app
+docsite/.retype
 .DS_Store

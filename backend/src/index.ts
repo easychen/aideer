@@ -89,7 +89,7 @@ const startServer = async () => {
   try {
     // 初始化数据库服务
     const dbService = DatabaseService.getInstance();
-    const dataDir = path.join(process.env.AI_DEER_DATA_PATH || path.join(__dirname, '..', 'data'));
+    const dataDir = process.env.AI_DEER_DATA_PATH || path.join(__dirname, '..', 'data');
     const dbPath = path.join(dataDir, 'aideer.db');
     
     // 确保数据目录存在

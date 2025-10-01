@@ -1,12 +1,101 @@
-# aideer
+# AiDeer
 
+AiDeer is a comprehensive AI-powered application that provides intelligent assistance and automation capabilities.
 
+## Getting Started
 
-## Getting started
+### Prerequisites
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- Node.js 18+ (for local development)
+- Docker and Docker Compose (for containerized deployment)
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### Development Setup
+
+1. Clone the repository
+2. Install dependencies for frontend and backend
+3. Start the development servers
+
+### Docker Deployment
+
+AiDeer supports two Docker deployment methods:
+
+#### Method 1: Using Docker Commands
+
+1. **Build the application:**
+   ```bash
+   # Using Robo task runner
+   ./robo build-docker
+   
+   # Or manually
+   cd frontend && npm run build
+   cd ../backend && npm run build
+   docker build -t aideer:latest -f docker/Dockerfile .
+   ```
+
+2. **Run the container:**
+   ```bash
+   docker run -d \
+     --name aideer \
+     -p 3001:3001 \
+     -v aideer_data:/app/data \
+     --restart unless-stopped \
+     aideer:latest
+   ```
+
+3. **Access the application:**
+   Open your browser and navigate to `http://localhost:3001`
+
+#### Method 2: Using Docker Compose (Recommended)
+
+1. **Start the application:**
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Stop the application:**
+   ```bash
+   docker-compose down
+   ```
+
+3. **View logs:**
+   ```bash
+   docker-compose logs -f aideer
+   ```
+
+4. **Update the application:**
+   ```bash
+   docker-compose pull
+   docker-compose up -d
+   ```
+
+### Docker Hub Deployment
+
+To publish to Docker Hub:
+
+1. **Build and publish:**
+   ```bash
+   # Using Robo task runner
+   ./robo publish-docker [tag]
+   
+   # Or manually
+   docker tag aideer:latest your-dockerhub-username/aideer:latest
+   docker push your-dockerhub-username/aideer:latest
+   ```
+
+2. **Pull and run from Docker Hub:**
+   ```bash
+   docker pull your-dockerhub-username/aideer:latest
+   docker run -d -p 3001:3001 your-dockerhub-username/aideer:latest
+   ```
+
+### Environment Variables
+
+- `NODE_ENV`: Set to `production` for production deployment
+- `PORT`: Application port (default: 3001)
+
+### Health Check
+
+The application includes a health check endpoint at `/health` that can be used for monitoring and load balancer configuration.
 
 ## Add your files
 
