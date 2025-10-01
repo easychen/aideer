@@ -373,6 +373,52 @@ const Header = ({
                   className="w-full p-3 text-left hover:bg-muted transition-colors border-b border-border last:border-b-0"
                 >
                   <div className="flex items-start space-x-3">
+                    {/* 缩略图 */}
+                    <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {result.type === 'file' && result.relativePath && (
+                        result.relativePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                          <img 
+                            src={`${import.meta.env.VITE_RESOURCE_HOST || ''}/data/${result.projectName}/${result.relativePath}`}
+                            alt={result.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : (
+                          <div className="text-muted-foreground text-xs">
+                            {result.relativePath?.split('.').pop()?.toUpperCase() || 'FILE'}
+                          </div>
+                        )
+                      )}
+                      {result.type === 'note' && result.relativePath && (
+                        result.relativePath.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ? (
+                          <img 
+                            src={`${import.meta.env.VITE_RESOURCE_HOST || ''}/data/${result.projectName}/${result.relativePath}`}
+                            alt={result.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : (
+                          <div className="text-green-500 text-lg">📝</div>
+                        )
+                      )}
+                      {result.type === 'note' && !result.relativePath && (
+                        <div className="text-green-500 text-lg">📝</div>
+                      )}
+                      {/* 备用图标，当图片加载失败时显示 */}
+                      <div className="hidden text-muted-foreground text-xs">
+                        {result.relativePath?.split('.').pop()?.toUpperCase() || 'FILE'}
+                      </div>
+                    </div>
+                    
+                    {/* 文件信息 */}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">{result.name}</div>
                       <div className="text-xs text-muted-foreground mt-1">
@@ -384,6 +430,7 @@ const Header = ({
                       </div>
                     </div>
                     
+                    {/* 类型指示器 */}
                     <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
                       result.type === 'file' ? 'bg-blue-500' : 'bg-green-500'
                     }`} />
