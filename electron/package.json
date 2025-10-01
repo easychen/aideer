@@ -13,6 +13,8 @@
     "build:all": "node build.cjs",
     "make": "electron-forge make",
     "package": "electron-forge package",
+    "package86": "electron-forge package --arch x64 --platform darwin",
+    "packageuni": "electron-forge package --arch universal --platform darwin",
     "publish": "electron-forge publish",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix"
@@ -62,6 +64,7 @@
         "name": "AiDeer",
         "executableName": "AiDeer",
         "icon": "icon.icns",
+        "arch": "universal",
         "extraResource": [
           "resources"
         ]

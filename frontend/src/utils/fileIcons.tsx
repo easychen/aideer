@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   FileText,
   Image,
@@ -137,7 +138,7 @@ export const getFileIcon = (fileName: string, size: number = 16) => {
   const extension = fileName.split('.').pop()?.toLowerCase();
   const IconComponent = extension ? fileTypeIcons[extension] : File;
   
-  return <IconComponent size={size} />;
+  return React.createElement(IconComponent, { size });
 };
 
 export const getFileTypeColor = (fileName: string): string => {

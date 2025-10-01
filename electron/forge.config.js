@@ -1,6 +1,8 @@
 module.exports = {
   packagerConfig: {
     asar: false,
+    arch: 'universal',
+    platform: 'darwin',
   },
   name: 'AiDeer',
   rebuildConfig: {},

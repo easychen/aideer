@@ -40,7 +40,7 @@ class RoboFile extends \Robo\Tasks
             ->run();
     }
 
-    public function buildApp()
+    function  prepairApp()
     {
         $this->buildWeb();
         $this->buildApi();
@@ -54,11 +54,32 @@ class RoboFile extends \Robo\Tasks
 
         // 将前端构建的文件复制到 electron 目录下
         $this->recursiveCopy('./frontend/dist', './electron/resources/site');
+    }
+
+    public function buildApp()
+    {
+        $this->prepairApp();
 
         // 安装 Node.js 依赖并打包应用
         $this->taskExecStack()
             ->exec('cd ./electron/resources && npm install && cd .. && npm run package')
             ->run();
+
+        
+
+            // $this->taskExec('cd ' . CODE_BASE_PATH . '/fxd-desktop && yarn package --arch arm64 && yarn package -p win32 && open out')->run();
+
+    }
+
+    public function buildAppUni()
+    {
+        $this->prepairApp();
+
+        // 安装 Node.js 依赖并打包应用
+        $this->taskExecStack()
+            ->exec('cd ./electron/resources && npm install && cd .. && npm run packageuni')
+            ->run();
+
     }
 
     public function buildDocker()

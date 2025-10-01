@@ -1,4 +1,4 @@
-import { Download, Zap, Container, Image, Video, Folder } from 'lucide-react'
+import { Download, Zap, Container, Image, Video, Folder, Github, Search, Package, Puzzle, Hash, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ImageSlider } from '@/components/ImageSlider'
 
@@ -55,6 +55,15 @@ function App() {
             <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">功能特色</a>
             <a href="#docker" className="text-gray-600 hover:text-gray-900 transition-colors">Docker</a>
             <a href="#download" className="text-gray-600 hover:text-gray-900 transition-colors">下载</a>
+            <a 
+              href="https://github.com/easychen/aideer" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-gray-600 hover:text-gray-900 transition-colors flex items-center space-x-1"
+            >
+              <Github className="w-4 h-4" />
+              <span>GitHub</span>
+            </a>
           </nav>
         </div>
       </header>
@@ -84,6 +93,17 @@ function App() {
               >
                 <Download className="w-5 h-5 mr-2" />
                 立刻使用
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  window.open('https://github.com/easychen/aideer', '_blank', 'noopener,noreferrer')
+                }}
+              >
+                <Github className="w-5 h-5 mr-2" />
+                查看源码
               </Button>
             </div>
           </div>
@@ -143,6 +163,51 @@ function App() {
               <h3 className="text-xl font-semibold text-gray-900 mb-3">灵活部署方式</h3>
               <p className="text-gray-600">
                 支持 Self-hosted 私有部署，也可作为客户端使用，满足不同场景需求
+              </p>
+            </div>
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                <Search className="w-6 h-6 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">快速搜索定位</h3>
+              <p className="text-gray-600">
+                强大的搜索功能，支持按文件名、标签、提示词等多维度快速定位资产
+              </p>
+            </div>
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <Package className="w-6 h-6 text-cyan-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">批量导入管理</h3>
+              <p className="text-gray-600">
+                支持批量导入文件和批量操作，提高资产管理效率，节省宝贵时间
+              </p>
+            </div>
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                <Puzzle className="w-6 h-6 text-pink-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">插件扩展系统</h3>
+              <p className="text-gray-600">
+                基于文件扩展名动态加载插件，支持自定义处理逻辑，扩展性强
+              </p>
+            </div>
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
+                <Hash className="w-6 h-6 text-teal-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">智能标注系统</h3>
+              <p className="text-gray-600">
+                基于文件 Hash 的笔记和标签系统，确保标注信息永不丢失
+              </p>
+            </div>
+            <div className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
+              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
+                <Heart className="w-6 h-6 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">开源免费</h3>
+              <p className="text-gray-600">
+                完全开源免费，AGPL-3.0 许可证，社区驱动开发，持续改进优化
               </p>
             </div>
           </div>
@@ -290,6 +355,10 @@ function App() {
             <div>
               <h4 className="font-semibold mb-4">资源</h4>
               <ul className="space-y-2 text-gray-400">
+                <li><a href="https://github.com/easychen/aideer" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center space-x-1">
+                  <Github className="w-4 h-4" />
+                  <span>GitHub</span>
+                </a></li>
                 <li><a href="#" className="hover:text-white transition-colors">使用文档</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">API 参考</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">技术支持</a></li>
