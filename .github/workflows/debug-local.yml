@@ -1,0 +1,50 @@
+# Local debugging workflow for GitHub Actions
+# This workflow can be used with act (https://github.com/nektos/act) to debug locally
+name: Debug Local Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ debug ]
+
+defaults:
+  run:
+    working-directory: ./website
+
+jobs:
+  debug-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './website/package-lock.json'
+
+      - name: Display environment info
+        run: |
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "Working directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show installed packages
+        run: npm list --depth=0
+
+      - name: Build website
+        run: npm run build
+        env:
+          VITE_BASE_PATH: /aideer/
+
+      - name: Display build output
+        run: |
+          echo "Build completed. Contents of dist directory:"
+          ls -la dist/
