@@ -187,9 +187,19 @@ const FileGrid = ({
         const blob = await response.blob();
         
         if (navigator.clipboard && window.ClipboardItem) {
+          // 检查剪贴板是否支持当前图片格式
+          const supportedTypes = ['image/png', 'image/gif', 'image/webp'];
+          let finalBlob = blob;
+          
+          // 如果当前格式不被支持，转换为 PNG
+          if (!supportedTypes.includes(blob.type)) {
+            console.log(`Converting ${blob.type} to PNG for clipboard compatibility`);
+            finalBlob = await convertImageToPng(blob);
+          }
+          
           await navigator.clipboard.write([
             new ClipboardItem({
-              [blob.type]: blob
+              [finalBlob.type]: finalBlob
             })
           ]);
           console.log('图片已复制到剪贴板');
@@ -221,6 +231,40 @@ const FileGrid = ({
       console.error('复制文件失败:', error);
       console.error('复制文件失败，请重试');
     }
+  };
+
+  // 将图片转换为 PNG 格式
+  const convertImageToPng = async (blob: Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('无法创建 Canvas 上下文'));
+        return;
+      }
+      
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((pngBlob) => {
+          if (pngBlob) {
+            resolve(pngBlob);
+          } else {
+            reject(new Error('图片转换失败'));
+          }
+        }, 'image/png');
+      };
+      
+      img.onerror = () => {
+        reject(new Error('图片加载失败'));
+      };
+      
+      img.src = URL.createObjectURL(blob);
+    });
   };
 
   // 判断文件是否支持复制
