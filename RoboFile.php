@@ -64,10 +64,16 @@ class RoboFile extends \Robo\Tasks
         $this->taskExecStack()
             ->exec('cd ./electron/resources && npm install && cd .. && npm run package')
             ->run();
+    }
 
-        
+    public function buildApp86()
+    {
+        $this->prepairApp();
 
-            // $this->taskExec('cd ' . CODE_BASE_PATH . '/fxd-desktop && yarn package --arch arm64 && yarn package -p win32 && open out')->run();
+        // 安装 Node.js 依赖并打包应用
+        $this->taskExecStack()
+            ->exec('cd ./electron/resources && npm install && cd .. && npm run package86')
+            ->run();
 
     }
 
