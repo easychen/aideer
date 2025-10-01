@@ -239,7 +239,12 @@ const AppContent = () => {
                </div>
                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.mac.apple.title')}</h3>
                <p className="text-gray-600 mb-4 flex-grow text-sm">{t('download.mac.apple.description')}</p>
-               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-auto">
+               <Button 
+                 className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-auto"
+                 onClick={() => {
+                   window.open('https://aideer.level06.com/AiDeer-1.0.3-darwin-arm64.zip', '_blank')
+                 }}
+               >
                  <Download className="w-4 h-4 mr-2" />
                  {t('download.downloadBtn')}
                </Button>
@@ -254,7 +259,12 @@ const AppContent = () => {
                </div>
                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.mac.intel.title')}</h3>
                <p className="text-gray-600 mb-4 flex-grow text-sm">{t('download.mac.intel.description')}</p>
-               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-auto">
+               <Button 
+                 className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-auto"
+                 onClick={() => {
+                   window.open('https://aideer.level06.com/AiDeer-1.0.3-darwin-x64.zip', '_blank')
+                 }}
+               >
                  <Download className="w-4 h-4 mr-2" />
                  {t('download.downloadBtn')}
                </Button>
@@ -269,7 +279,12 @@ const AppContent = () => {
                </div>
                <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('download.windows.title')}</h3>
                <p className="text-gray-600 mb-4 flex-grow text-sm">{t('download.windows.description')}</p>
-               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-auto">
+               <Button 
+                 className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-auto"
+                 onClick={() => {
+                   window.open('https://aideer.level06.com/AiDeer-1.0.3-win32-x64.zip', '_blank')
+                 }}
+               >
                  <Download className="w-4 h-4 mr-2" />
                  {t('download.downloadBtn')}
                </Button>
