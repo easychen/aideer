@@ -1,19 +1,110 @@
 # AiDeer
 
-AiDeer is a comprehensive AI-powered application that provides intelligent assistance and automation capabilities.
+[中文文档](README_zh.md) | English
+
+AiDeer is a professional AI asset management tool that helps you collect, organize, and manage AI-generated content from various image and video generation websites. Keep your AI creative assets organized and ready to use.
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![GitHub](https://img.shields.io/badge/GitHub-easychen%2Faideer-blue)](https://github.com/easychen/aideer)
 
+## Screenshots
+
+<div align="center">
+
+### Main Interface
+![Main Interface](website/public/screen8.png)
+*File browser interface with multi-level tree directory, customizable preview size, and quick copy functionality*
+
+### Settings & Plugin Management
+<table>
+  <tr>
+    <td><img src="website/public/screen3.png" alt="Settings Interface" width="400"/></td>
+    <td><img src="website/public/screen2.png" alt="Plugin Management" width="400"/></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Settings with light/dark theme support</em></td>
+    <td align="center"><em>Open plugin architecture</em></td>
+  </tr>
+</table>
+
+### Batch Operations & File Details
+<table>
+  <tr>
+    <td><img src="website/public/screen5.png" alt="Batch Operations" width="400"/></td>
+    <td><img src="website/public/screen6.png" alt="File Details" width="400"/></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Multi-selection batch operations</em></td>
+    <td align="center"><em>File details with tags and notes</em></td>
+  </tr>
+</table>
+
+</div>
+
 ## Features
 
-- Intelligent AI-powered assistance
-- Comprehensive automation capabilities
-- Modern web interface
-- Docker support for easy deployment
-- RESTful API architecture
+### 🌐 Multi-Platform Collection
+Browser extension for image import, drag-and-drop batch file import, easily collect AI-generated content from various platforms
+
+### 💡 Prompt Management
+View image prompt information, easily manage and reuse your creative inspiration
+
+### 🎭 Character Card Management
+View and manage CharacterCard information, unified management of your AI character assets
+
+### 🚀 Flexible Deployment
+Support self-hosted private deployment or use as client, meeting different scenario needs
+
+### 🔍 Quick Search & Locate
+Powerful search functionality, support multi-dimensional quick asset location by filename, tags, prompts
+
+### 📦 Batch Import Management
+Support batch file import and operations, improve asset management efficiency, save valuable time
+
+### 🔌 Plugin Extension System
+Dynamic plugin loading based on file extensions, support custom processing logic, highly extensible
+
+### 🏷️ Smart Annotation System
+File hash-based notes and tag system, ensuring annotation information never gets lost
+
+### 💝 Open Source & Free
+Completely open source and free, AGPL-3.0 license, community-driven development, continuous improvement
 
 ## Getting Started
+
+### Download Options
+
+#### Desktop Applications
+[WebSite](https://ad.level06.com/)
+
+#### Docker Deployment
+
+**Quick Start:**
+```bash
+# Pull and run AiDeer
+docker run -d \
+  --name aideer \
+  -p 3001:3001 \
+  -v aideer_data:/app/data \
+  --restart unless-stopped \
+  easychen/aideer:latest
+```
+
+**Docker Compose:**
+```yaml
+version: '3.8'
+services:
+  aideer:
+    image: easychen/aideer:latest
+    ports:
+      - "3001:3001"
+    volumes:
+      - aideer_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  aideer_data:
+```
 
 ### Prerequisites
 
@@ -23,8 +114,31 @@ AiDeer is a comprehensive AI-powered application that provides intelligent assis
 ### Development Setup
 
 1. Clone the repository
-2. Install dependencies for frontend and backend
-3. Start the development servers
+```bash
+git clone https://github.com/easychen/aideer.git
+cd aideer
+```
+
+2. Install dependencies
+```bash
+# Install root dependencies
+npm install
+
+# Install frontend dependencies
+cd frontend && npm install
+
+# Install backend dependencies
+cd ../backend && npm install
+```
+
+3. Start development servers
+```bash
+# Start frontend (port 3000)
+cd frontend && npm run dev
+
+# Start backend (port 3001)
+cd backend && npm run dev
+```
 
 ### Docker Deployment
 
