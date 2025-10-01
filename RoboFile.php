@@ -22,6 +22,13 @@ class RoboFile extends \Robo\Tasks
             ->run();
     }
 
+    public function buildWebsite()
+    {
+        $this->taskExecStack()
+            ->exec('cd ./website && npm run build')
+            ->run();
+    }
+
     public function buildAppOnly()
     {
         // 清空 ./electron/resources 目录
