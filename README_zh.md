@@ -77,6 +77,36 @@ AiDeer 是一款专业的 AI 资产管理工具，帮助你统一收集、整理
 #### 桌面应用程序
 [WebSite](https://aid.level06.com/)
 
+#### 浏览器插件
+
+**下载：**
+1. 从 [Releases](https://github.com/easychen/aideer/releases) 页面下载最新的浏览器插件 zip 文件
+2. 查找发布资源中的 `browser-extension-x.x.x-chrome.zip` 文件
+
+**安装：**
+1. 解压下载的 zip 文件
+2. 打开 Chrome 浏览器，导航到 `chrome://extensions/`
+3. 在右上角启用"开发者模式"
+4. 点击"加载已解压的扩展程序"并选择解压后的文件夹
+5. AiDeer 扩展程序现在应该出现在您的扩展程序列表中
+
+**配置：**
+1. 点击浏览器工具栏中的 AiDeer 扩展程序图标
+2. 配置 API 地址：
+   - 桌面客户端：`http://localhost:15543`
+   - Docker 部署：`http://localhost:3001`
+3. 设置您偏好的保存路径（例如：`/downloads/images`）
+4. 点击"测试连接"验证连接
+5. 点击"保存设置"保存您的配置
+
+**使用方法：**
+- 点击扩展程序图标，然后点击"开始收集"来扫描并收集当前网页的媒体内容
+- 扩展程序会自动检测页面上的图片和视频
+- 选择您想要保存的媒体，它们将被导入到您的 AiDeer 实例中
+
+#### 视频教程
+📺 [观看完整的安装和使用教程（B站）](https://www.bilibili.com/video/BV183Hxz4EuN/)
+
 #### Docker 部署
 
 **快速启动：**

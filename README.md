@@ -77,6 +77,36 @@ Completely open source and free, AGPL-3.0 license, community-driven development,
 #### Desktop Applications
 [WebSite](https://aid.level06.com/)
 
+#### Browser Extension
+
+**Download:**
+1. Download the latest browser extension zip file from the [Releases](https://github.com/easychen/aideer/releases) page
+2. Look for `browser-extension-x.x.x-chrome.zip` in the release assets
+
+**Installation:**
+1. Extract the downloaded zip file
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right corner
+4. Click "Load unpacked" and select the extracted folder
+5. The AiDeer extension should now appear in your extensions list
+
+**Configuration:**
+1. Click the AiDeer extension icon in your browser toolbar
+2. Configure the API URL:
+   - For desktop client: `http://localhost:15543`
+   - For Docker deployment: `http://localhost:3001`
+3. Set your preferred save path (e.g., `/downloads/images`)
+4. Click "Test Connection" to verify the connection
+5. Click "Save Settings" to save your configuration
+
+**Usage:**
+- Click the extension icon and then "Start Collection" to scan and collect media from the current webpage
+- The extension will automatically detect images and videos on the page
+- Select the media you want to save and they will be imported to your AiDeer instance
+
+#### Video Tutorial
+📺 [Watch the complete setup and usage tutorial on Bilibili](https://www.bilibili.com/video/BV183Hxz4EuN/)
+
 #### Docker Deployment
 
 **Quick Start:**
