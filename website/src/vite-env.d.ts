@@ -1,5 +1,14 @@
 /// <reference types="vite/client" />
 
+// JSX namespace declaration
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      [elemName: string]: any;
+    }
+  }
+}
+
 declare module "*.css" {
   const content: string;
   export default content;
